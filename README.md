@@ -1,0 +1,2 @@
+A simple serialization language to store and load program configurations, small databases, and other complex objects.
+In contrast to Json and XML, Mayma is better suited for using from object-oriented libraries like Java.
