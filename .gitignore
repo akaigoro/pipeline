@@ -1,9 +1,10 @@
 # eclipse files
-#*/.settings/*
-#*/.classpath
-#*/.project
-#.classpath
-#.project
+.settings/*
+*/.classpath
+*/.project
+.classpath
+.project
+bin
 
 # test results
 tmpfile*
