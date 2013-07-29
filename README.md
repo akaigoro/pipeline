@@ -10,7 +10,7 @@ MulticastSocket(InetSocketAddress("localhost", 7777),
     timeToLive:100)
 </pre>
 
-This equivalent to following Java code:
+This is equivalent to following Java code:
 <pre>
 MulticastSocket ms=new MulticastSocket(InetSocketAddress("localhost", 7777));
 ms.setLoopbackMode(true);
@@ -61,10 +61,10 @@ Architecture
 ------------
 The library consits of three packages:
 
-<pr>com.github.rfqu.javon.parser, with main class JavonParser
-<pr>com.github.rfqu.javon.builder, with main class JavonBuilder
-<pr>com.github.rfqu.javon, which defines interfaces to connect parser and builder.
-<pr>Parser and builder are connected at run time. User can define own builder, provided
+<br>com.github.rfqu.javon.parser, with main class JavonParser
+<br>com.github.rfqu.javon.builder, with main class JavonBuilder
+<br>com.github.rfqu.javon, which defines interfaces to connect parser and builder.
+<br>Parser and builder are connected at run time. User can define own builder, provided
 it implements required interfaces. For testing purposes, JavonPrinter class can be used.
 
 Before connecting parser and builder, the latter should be informed which actual classes 
@@ -73,14 +73,14 @@ Unnamed lists and maps are implemented by classes JsonList and JsonMap, respecti
 
 Grammar
 -------
-VALUE: PRIMITIVE | LIST | MAP | OBJECT
-PRIMITIVE: null | false | true | NUMBER | STRING
-STRING: '"' SYMBOL* '" 
-LIST: '[' (VALUE)* ']'
-MAP: '{' (KEY ':' VALUE)* '}'
-KEY: STRING | IDENT
-OBJECT: IDENT ('(' POS_ARG* NAMED_ARG* ')' )? LIST? MAP?
-POS_ARG: VALUE
-NAMED_ARG: IDENT ':' VALUE
-IDENT: LETTER ( LETTER | DIGIT )*
-ROOT_OBJECT: LIST | MAP | OBJECT
+<br>VALUE: PRIMITIVE | LIST | MAP | OBJECT
+<br>PRIMITIVE: null | false | true | NUMBER | STRING
+<br>STRING: '"' SYMBOL* '" 
+<br>LIST: '[' (VALUE)* ']'
+<br>MAP: '{' (KEY ':' VALUE)* '}'
+<br>KEY: STRING | IDENT
+<br>OBJECT: IDENT ('(' POS_ARG* NAMED_ARG* ')' )? LIST? MAP?
+<br>POS_ARG: VALUE
+<br>NAMED_ARG: IDENT ':' VALUE
+<br>IDENT: LETTER ( LETTER | DIGIT )*
+<br>ROOT_OBJECT: LIST | MAP | OBJECT
