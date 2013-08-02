@@ -9,18 +9,8 @@
  */
 package com.github.rfqu.javon.builder;
 
-import java.beans.IntrospectionException;
-import java.util.HashMap;
+public interface ListBuilder {
+    public void add(Object value);
 
-public class ClassMap {
-    protected HashMap<String, ClassDescr> classDescrs = new HashMap<String, ClassDescr>();
-
-    public synchronized ClassDescr get(String name) throws ClassNotFoundException, IntrospectionException {
-        return classDescrs.get(name);
-    }
-
-    public void put(String simpleName, Class<?> clazz) throws IntrospectionException {
-        classDescrs.put(simpleName, new ClassDescr(clazz));
-    }
-
+    public Object getValue();
 }

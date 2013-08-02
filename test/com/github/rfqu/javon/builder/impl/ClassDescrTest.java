@@ -1,4 +1,4 @@
-package com.github.rfqu.javon.builder;
+package com.github.rfqu.javon.builder.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Vector;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.github.rfqu.javon.builder.ClassDescr;
+import com.github.rfqu.javon.builder.impl.ClassDescr;
 
 public class ClassDescrTest {
 

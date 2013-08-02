@@ -7,12 +7,10 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon;
+package com.github.rfqu.javon.builder;
 
-public interface JavonBulderFactory {
-    public ObjectBuilder newObjectBuilder(String className) throws Exception;
+public interface MapBuilder {
+    public void set(String key, Object value) throws Exception;
 
-    public ListBuilder newListBuilder();
-
-    public MapBuilder newMapBuilder();
+    public Object getValue();
 }

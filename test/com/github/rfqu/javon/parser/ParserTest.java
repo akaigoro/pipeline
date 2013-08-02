@@ -7,7 +7,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.github.rfqu.javon.parser.JavonParser;
-import com.github.rfqu.javon.builder.JavonPrinter;
+import com.github.rfqu.javon.builder.impl.JavonPrinter;
 
 public class ParserTest {
 

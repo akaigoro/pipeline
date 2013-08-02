@@ -7,12 +7,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.builder;
+package com.github.rfqu.javon.builder.impl;
 
-import com.github.rfqu.javon.JavonBulderFactory;
-import com.github.rfqu.javon.ListBuilder;
-import com.github.rfqu.javon.MapBuilder;
-import com.github.rfqu.javon.ObjectBuilder;
+import com.github.rfqu.javon.builder.JavonBulderFactory;
+import com.github.rfqu.javon.builder.ListBuilder;
+import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.javon.builder.ObjectBuilder;
 
 public class JavonPrinter implements JavonBulderFactory {
     Printer pr=new Printer();

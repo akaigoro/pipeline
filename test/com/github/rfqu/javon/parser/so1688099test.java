@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.github.rfqu.javon.builder.JavonBuilder;
+import com.github.rfqu.javon.builder.impl.JavonBuilder;
 
 public class so1688099test {
 	static final String inp=

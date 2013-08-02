@@ -7,9 +7,9 @@ import java.io.IOException;
 //import org.junit.Test;
 
 import com.github.rfqu.javon.parser.JavonParser;
-import com.github.rfqu.javon.builder.JavonBuilder;
-import com.github.rfqu.javon.builder.JsonList;
-import com.github.rfqu.javon.builder.JsonMap;
+import com.github.rfqu.javon.builder.impl.JavonBuilder;
+import com.github.rfqu.javon.builder.impl.JsonList;
+import com.github.rfqu.javon.builder.impl.JsonMap;
 
 public class ParserBuilderTest extends ParserTest {
 

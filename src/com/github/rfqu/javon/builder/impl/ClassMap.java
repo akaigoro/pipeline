@@ -7,12 +7,20 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon;
+package com.github.rfqu.javon.builder.impl;
 
-public interface ObjectBuilder extends MapBuilder {
-    void instatntiate() throws Exception;
-    void instatntiate(Object... args) throws Exception;
-    ListBuilder asListBuilder() throws Exception;
-    MapBuilder asMapBuilder() throws Exception;
-    public Object getValue();
+import java.beans.IntrospectionException;
+import java.util.HashMap;
+
+public class ClassMap {
+    protected HashMap<String, ClassDescr> classDescrs = new HashMap<String, ClassDescr>();
+
+    public synchronized ClassDescr get(String name) throws ClassNotFoundException, IntrospectionException {
+        return classDescrs.get(name);
+    }
+
+    public void put(String simpleName, Class<?> clazz) throws IntrospectionException {
+        classDescrs.put(simpleName, new ClassDescr(clazz));
+    }
+
 }

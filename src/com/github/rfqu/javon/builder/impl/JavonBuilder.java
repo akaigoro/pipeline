@@ -7,15 +7,15 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.builder;
+package com.github.rfqu.javon.builder.impl;
 
 import java.util.List;
 import java.util.Map;
 
-import com.github.rfqu.javon.JavonBulderFactory;
-import com.github.rfqu.javon.ListBuilder;
-import com.github.rfqu.javon.MapBuilder;
-import com.github.rfqu.javon.ObjectBuilder;
+import com.github.rfqu.javon.builder.JavonBulderFactory;
+import com.github.rfqu.javon.builder.ListBuilder;
+import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.javon.builder.ObjectBuilder;
 import com.github.rfqu.javon.parser.ParseException;
 
 public class JavonBuilder extends ClassMap implements JavonBulderFactory {

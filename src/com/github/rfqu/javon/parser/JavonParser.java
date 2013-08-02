@@ -19,10 +19,10 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 
-import com.github.rfqu.javon.JavonBulderFactory;
-import com.github.rfqu.javon.ListBuilder;
-import com.github.rfqu.javon.MapBuilder;
-import com.github.rfqu.javon.ObjectBuilder;
+import com.github.rfqu.javon.builder.JavonBulderFactory;
+import com.github.rfqu.javon.builder.ListBuilder;
+import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.javon.builder.ObjectBuilder;
 
 /** at least one of following methods should be overriden:
  * newRootObject(),

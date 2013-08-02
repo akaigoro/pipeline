@@ -1,11 +1,12 @@
-package com.github.rfqu.javon.builder;
+package com.github.rfqu.javon.builder.impl;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.github.rfqu.javon.ListBuilder;
-import com.github.rfqu.javon.MapBuilder;
+import com.github.rfqu.javon.builder.ListBuilder;
+import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.javon.builder.impl.JavonPrinter;
 
 public class JavonPrinterTest {
 
