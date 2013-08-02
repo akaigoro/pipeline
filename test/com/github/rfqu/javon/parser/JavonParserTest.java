@@ -9,24 +9,7 @@ import org.junit.Test;
 import com.github.rfqu.javon.parser.JavonParser;
 import com.github.rfqu.javon.builder.impl.JavonPrinter;
 
-public class ParserTest {
-
-    @Test
-    public void testList() throws Exception {
-        check("[]");
-        check("[null]");
-        check("[1]");
-        check("[\"A\"]");
-        check("[1 2 3.0, ]", "[1,2,3.0]");
-    }
-
-    @Test
-    public void testMap() throws Exception {
-        check("{}");
-        check("{\"a\":null}");
-        check("{a:true, \"b\":1 \"c\":2.0 \"%%%\":2.0 \"...\":\"2.0\", }",
-                "{\"a\":true,\"b\":1,\"c\":2.0,\"%%%\":2.0,\"...\":\"2.0\"}");
-    }
+public class JavonParserTest {
 
     @Test
     public void testObj() throws Exception {

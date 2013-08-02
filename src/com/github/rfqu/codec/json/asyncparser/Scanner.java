@@ -7,13 +7,15 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.parser;
+package com.github.rfqu.codec.json.asyncparser;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 
-public class JavonScanner {
+import com.github.rfqu.javon.parser.ParseException;
+
+public class Scanner implements LinePort {
     protected static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
@@ -36,7 +38,6 @@ public class JavonScanner {
         }
     }
 
-    private BufferedReader in;
     private String line;
     private int lineNumber=0;
     private int pos=0;
@@ -48,7 +49,7 @@ public class JavonScanner {
     protected int tokenType;
     protected String tokenString;
     
-    public JavonScanner(BufferedReader in) throws IOException {
+    public Scanner(BufferedReader in) throws IOException {
         this.in = in;
         // skip empty lines
         for (;;) {
@@ -284,4 +285,10 @@ public class JavonScanner {
         // TODO embedded values
         tokenType=IDENT;
     }
+
+	@Override
+	public void postLine(String str) {
+		// TODO Auto-generated method stub
+		
+	}
 }

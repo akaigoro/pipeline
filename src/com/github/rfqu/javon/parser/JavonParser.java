@@ -20,8 +20,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 
 import com.github.rfqu.javon.builder.JavonBulderFactory;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
 import com.github.rfqu.javon.builder.ObjectBuilder;
 
 /** at least one of following methods should be overriden:
@@ -31,8 +29,8 @@ import com.github.rfqu.javon.builder.ObjectBuilder;
  * @author ak
  *
  */
-public class JavonParser extends JavonScanner {//extends JsonStack {
-    private JavonBulderFactory factory; 
+public class JavonParser extends JsonParser {
+	protected JavonBulderFactory factory; 
 
     public JavonParser(Reader ir) throws IOException {
         super(new BufferedReader(ir));
@@ -52,6 +50,7 @@ public class JavonParser extends JavonScanner {//extends JsonStack {
 
     public Object parseWith(JavonBulderFactory factory) throws Exception {
         this.factory=factory;
+        super.factory=factory;
         scan();
         // skip empty lines
         skipSpaces();
@@ -148,101 +147,6 @@ public class JavonParser extends JavonScanner {//extends JsonStack {
         }
         return builder.getValue();
     }
-
-    protected Object parseMap() throws IOException, ParseException, Exception {
-        MapBuilder builder = factory.newMapBuilder();
-        parseMap(builder);
-        return builder.getValue();
-    }
-
-    protected void parseMap(MapBuilder builder) throws IOException, ParseException, Exception {
-        checkAndScan(LBRACE);
-        for (;;) {
-            switch (tokenType) {
-            case COMMA:
-                scan();
-                break;
-            case RBRACE:
-                scan();
-                return;
-            case STRING: 
-            case IDENT: {
-                String key = tokenString;
-                scan();
-                checkAndScan(COLON);
-                Object value=parseValue();
-                builder.set(key, value);
-                break;
-            }
-            default:
-                throw new ParseException("comma  or } expected");
-            }
-        }
-    }
-
-    /**
-     * allows spare commas
-     */
-    private void parseList(ListBuilder builder) throws Exception {
-        checkAndScan(LBRACKET);
-        for (;;) {
-            switch (tokenType) {
-            case RBRACKET:
-                scan();
-                return;
-            case COMMA:
-                scan();
-                break;
-            default:
-                Object value=parseValue();
-                builder.add(value);
-            }
-        }
-    }
-
-    protected Object parseList() throws Exception {
-        ListBuilder builder = factory.newListBuilder();
-        parseList(builder);
-        return builder.getValue();
-    }
-    
-    /** 
-     * string, array, map, or object
-     */
-    private Object parseValue() throws Exception {
-        switch (tokenType) {
-        case LBRACKET:
-            return parseList();
-        case LBRACE:
-            return parseMap();
-        case STRING: {
-            String str=tokenString;
-            scan();
-            return str;
-        }
-        case NUMBER: 
-            return parseNumber();
-        case IDENT:
-            return parseIdent();
-        default: 
-            throw new ParseException("value expected, but "+token2Str(tokenType)+" seen");
-        }
-    }
-    
-    private Object parseNumber() throws ParseException, IOException {
-        Object res;
-        try {
-            res=Integer.valueOf(tokenString);
-        } catch (NumberFormatException e) {
-            try {
-                res=Double.valueOf(tokenString);
-            } catch (NumberFormatException e1) {
-                throw new ParseException("bad number:"+tokenString);
-            }
-        }
-        scan();
-        return res;
-    }
     
     /** 
      * string, array, or object
@@ -250,7 +154,7 @@ public class JavonParser extends JavonScanner {//extends JsonStack {
      * @throws IOException
      * @throws ParseException 
      */
-    private Object parseIdent() throws Exception {
+    protected Object parseIdent() throws Exception {
         Object res;
         if ("null".equals(tokenString)) {
             res=null;

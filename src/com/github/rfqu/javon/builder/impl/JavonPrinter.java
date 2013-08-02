@@ -14,7 +14,7 @@ import com.github.rfqu.javon.builder.ListBuilder;
 import com.github.rfqu.javon.builder.MapBuilder;
 import com.github.rfqu.javon.builder.ObjectBuilder;
 
-public class JavonPrinter implements JavonBulderFactory {
+public class JavonPrinter extends JsonPrinter implements JavonBulderFactory {
     Printer pr=new Printer();
 
     @Override
@@ -23,104 +23,6 @@ public class JavonPrinter implements JavonBulderFactory {
         return new ObjectBuilderImpl(className);
     }
 
-    @Override
-    public ListBuilder newListBuilder() {
-        pr.log("newListBuilder");
-        return new ListBuilderImpl();
-    }
-
-    @Override
-    public MapBuilder newMapBuilder() {
-        pr.log("newMapBuilder");
-        return new MapBuilderImpl();
-    }
-
-    static class StringWrapper {
-        private String str;
-
-        public StringWrapper(String str) {
-            this.str = str;
-        }
-
-        @Override
-        public String toString() {
-            return str;
-        }
-        
-    }
-
-    static class MyStringBuilder {
-        StringBuilder sb=new StringBuilder();
-        char closingChar='0';
-        
-        public void append(char ch) {
-            sb.append(ch);
-        }
-
-        public void append(Object value) {
-            sb.append(value);
-        }
-
-        @Override
-        public String toString() {
-            return sb.toString();
-        }
-    }
-    
-    static class Printer {
-        MyStringBuilder sb;
-        
-        public Printer(MyStringBuilder sb) {
-            this.sb = sb;
-        }
-
-        public Printer() {
-            this(new MyStringBuilder());
-        }
-
-        protected void setCloseChar(char closingChar) {
-            log("setCloseChar",closingChar);
-            checkCloseChar();
-            sb.closingChar=closingChar;
-        }
-
-        protected void checkCloseChar() {
-            log("checkCloseChar",sb.closingChar);
-            if (sb.closingChar!='0') {
-                sb.append(sb.closingChar);
-                sb.closingChar='0';
-            }
-        }
-
-        protected void printValue(Object value) {
-            if (value instanceof String) {
-                sb.append('"');
-                sb.append(value);
-                sb.append('"');
-            } else {
-                sb.append(value);
-            }
-        }
-
-        public StringWrapper getValue() {
-            checkCloseChar();
-            return new StringWrapper(sb.toString());
-        }
-
-        
-        void log(String procName, Object... args) {
-            System.out.print(getClass().getSimpleName());
-            System.out.print(".");
-            System.out.print(procName);
-            System.out.print(":");
-            for (Object arg: args) {
-                System.out.print(" ");
-                System.out.print(arg);
-            }
-            System.out.println();
-        }
-    }
-    
     class ObjectBuilderImpl extends Printer implements ObjectBuilder {
         String className;
         boolean first=true;
@@ -180,60 +82,6 @@ public class JavonPrinter implements JavonBulderFactory {
         public MapBuilder asMapBuilder() throws Exception {
             checkCloseChar();
             return new MapBuilderImpl(sb);
-        }
-    }
-    
-    class ListBuilderImpl extends Printer implements ListBuilder {
-        private boolean first=true;
-
-        public ListBuilderImpl(MyStringBuilder sb) {
-            super(sb);
-            sb.append('[');
-            setCloseChar(']');
-        }
-
-        public ListBuilderImpl() {
-            this(new MyStringBuilder());
-        }
-
-        @Override
-        public void add(Object value) {
-            log("add", value);
-            if (first) {
-                first=false;
-            } else {
-                sb.append(",");
-            }
-            printValue(value);
-        }
-    }
-    
-    class MapBuilderImpl extends Printer implements MapBuilder {
-        private boolean first=true;
-
-        public MapBuilderImpl(MyStringBuilder sb) {
-            super(sb);
-            sb.append('{');
-            setCloseChar('}');
-        }
-
-        public MapBuilderImpl() {
-            this(new MyStringBuilder());
-        }
-
-        @Override
-        public void set(String key, Object value) throws Exception {
-            log("set", key, value);
-            if (first) {
-                first=false;
-            } else {
-                sb.append(",");
-            }
-            sb.append('"');
-            sb.append(key);
-            sb.append('"');
-            sb.append(':');
-            printValue(value);
         }
     }
 }

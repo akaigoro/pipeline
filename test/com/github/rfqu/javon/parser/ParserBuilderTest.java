@@ -11,7 +11,7 @@ import com.github.rfqu.javon.builder.impl.JavonBuilder;
 import com.github.rfqu.javon.builder.impl.JsonList;
 import com.github.rfqu.javon.builder.impl.JsonMap;
 
-public class ParserBuilderTest extends ParserTest {
+public class ParserBuilderTest extends JavonParserTest {
 
     protected void check(String inp, String exp) throws IOException, Exception {
         JavonParser mp=new JavonParser(inp);

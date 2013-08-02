@@ -9,6 +9,8 @@
  */
 package com.github.rfqu.javon.builder;
 
-public interface JavonBulderFactory extends JsonBulderFactory {
-    public ObjectBuilder newObjectBuilder(String className) throws Exception;
+public interface JsonBulderFactory {
+    public ListBuilder newListBuilder();
+
+    public MapBuilder newMapBuilder();
 }
