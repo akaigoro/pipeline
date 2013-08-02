@@ -101,7 +101,7 @@ public class JavonScanner {
 
     protected void checkAndScan(int expected) throws IOException, ParseException {
         if (tokenType!=expected) {
-            throw new ParseException(token2Str(expected) +" expected.");
+            throw new ParseException(token2Str(expected) +" expected, but '"+token2Str(tokenType)+"' seen");
         }
         scan();
     }

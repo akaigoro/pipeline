@@ -212,10 +212,8 @@ public class JavonParser extends JavonScanner {//extends JsonStack {
     private Object parseValue() throws Exception {
         switch (tokenType) {
         case LBRACKET:
-            scan();
             return parseList();
         case LBRACE:
-            scan();
             return parseMap();
         case STRING: {
             String str=tokenString;

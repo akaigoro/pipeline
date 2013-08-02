@@ -40,6 +40,9 @@ public class JavonBuilder extends ClassMap implements JavonBulderFactory {
         Object data;
 
         public ObjectBuilderImpl(ClassDescr descr) {
+        	if (descr==null) {
+        		throw new IllegalArgumentException("ClassDescr may not be null");
+        	}
             this.descr=descr;
         }
 
