@@ -9,8 +9,6 @@
  */
 package com.github.rfqu.javon.builder;
 
-public interface ListBuilder {
+public interface ListBuilder extends StructBuilder {
     public void add(Object value);
-
-    public Object getValue();
 }

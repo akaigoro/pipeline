@@ -153,7 +153,7 @@ public class JsonPrinter implements JsonBulderFactory {
         }
 
         @Override
-        public void set(String key, Object value) throws Exception {
+        public void set(String key, Object value) {
             log("set", key, value);
             if (first) {
                 first=false;

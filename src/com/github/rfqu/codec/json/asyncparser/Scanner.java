@@ -9,10 +9,6 @@
  */
 package com.github.rfqu.codec.json.asyncparser;
 
-import java.io.BufferedReader;
-import java.io.EOFException;
-import java.io.IOException;
-
 import com.github.rfqu.javon.parser.ParseException;
 
 public class Scanner implements LinePort {
@@ -41,31 +37,45 @@ public class Scanner implements LinePort {
     private String line;
     private int lineNumber=0;
     private int pos=0;
-    private char cch;
+    private char charAterIdent;
     
     private String tokenLine;
     private int tokenLineNumber;
     private int tokenPos;
-    protected int tokenType;
-    protected String tokenString;
     
-    public Scanner(BufferedReader in) throws IOException {
-        this.in = in;
-        // skip empty lines
-        for (;;) {
-            line = in.readLine();
-            lineNumber++;
-            if (line == null) {
-                throw new EOFException("source file is empty");
-            }
-            if (line.length()>0) {
-                break;
-            }
-        }
-        pos=0;
-        cch=line.charAt(pos);
+    GeneralScanner generalScanner=new GeneralScanner();
+    StringScanner stringScanner=new StringScanner();
+    NumScanner numScanner=new NumScanner();
+    IdentScanner identScanner=new IdentScanner();
+    CharPort chp=generalScanner;
+    TokenPort tokenPort;
+    
+    StringBuilder tokenStrinBuilder=new StringBuilder();
+    
+    void setScanner(CharPort p) {
+        chp=p;
+    }
+    
+    protected void setTokenPort(TokenPort tp) {
+        tokenPort=tp;
     }
 
+    @Override
+    public void postLine(String str) {
+        if (str==null) {
+            tokenPort.postToken(EOF, null);
+            return;
+        }
+        line = str;
+        lineNumber++;
+        int length = line.length();
+        for (pos=0; pos<length; pos++) {
+            char ch = line.charAt(pos);
+            chp.postChar(ch);
+        }
+        chp.postChar((char) NEWL);
+    } 
+    
     protected ParseException toParseException(Exception e) throws ParseException {
         StringBuilder sb=new StringBuilder("\n");
         if (e instanceof ParseException) {
@@ -85,173 +95,89 @@ public class Scanner implements LinePort {
         ee.setStackTrace(stackTrace);
         return ee;
     }
-    
-    protected void skipSpaces() throws IOException, ParseException {
-        for (;;) {
-            switch (tokenType) {
-            case SPACE:
-            case TAB:
-            case NEWL:
-                scan();
-                break;
-            default:
-                return;
-            }
-        }
-    }
 
-    protected void checkAndScan(int expected) throws IOException, ParseException {
-        if (tokenType!=expected) {
-            throw new ParseException(token2Str(expected) +" expected, but '"+token2Str(tokenType)+"' seen");
-        }
-        scan();
+    void postToken(int tokenType) {
+        String str=tokenStrinBuilder.toString();
+        tokenPort.postToken(tokenType, str);
+        tokenStrinBuilder.delete(0, str.length());
+        setScanner(generalScanner);
     }
     
-    /**
-     * 
-     * @return next character
-     * @throws IOException
-     */
-    private void nextChar() throws IOException {
-        pos++;
-        if (pos==line.length()) {
-            cch=NEWL;
-            return;
-        }
-        if (pos>line.length()) {
-            line=in.readLine();
-            lineNumber++;
-            pos=0;
-            if (line==null) {
-                cch=EOF;
-                return;
-            } 
-            if (line.length()==0) {
-                cch=NEWL;
-                return;
-            } 
-        }
-        cch=line.charAt(pos);
-    }
-    
-    /**
-     * determines next lexical token type
-     */
-    protected int lookahead() throws IOException, ParseException {
-        for (;;) {
-            switch (cch) {
-            case SPACE: case TAB:   case NEWL:
-                nextChar();
-                continue;
-                /*
-            case COMMENT: // TODO
-                nextChar();
-                continue;
-                */
-            case EOF:
-            case LPAREN: case RPAREN:
-            case LBRACE: case RBRACE: case LBRACKET:
-            case RBRACKET: case COMMA: case COLON:
-            case QUOTE: case QUOTE2:
-                return cch;
-            default:
-                if (Character.isDigit(cch)) {
-                    return NUMBER;
-                } else if (Character.isLetter(cch)) {
-                    return IDENT;
-                } else {
-                    throw new ParseException("unexpected character:"+cch);
-                }
-            } // end switch
-        } //end for loop
-    }
-
-    /**
-     * determines current lexical token
-     * @return token type, equal to the start character, or alpha for literal
-     * @throws IOException
-     * @throws ParseException 
-     */
-    protected void scan() throws IOException, ParseException {
-        for (;;) {
-            switch (cch) {
-            case EOF:
-                tokenString=null;
-                tokenType=cch;
-                return;
-            case LPAREN: case RPAREN:
-            case LBRACE: case RBRACE: case LBRACKET:
-            case RBRACKET: case COMMA: case COLON:
-                markTokenPosition();
-                tokenString=null;
-                tokenType=cch;
-                nextChar();
-                return;
-            case SPACE: case TAB:   case NEWL:
-                nextChar();
-                continue;
-            case COMMENT:
-                pos=line.length()-1;
-                nextChar();
-                continue;
-            case QUOTE:
-            case QUOTE2:
-                scanString(cch);
-                return;
-            default:
-                if (Character.isDigit(cch)) {
-                    scanNumber();
-                    return;
-                } else if (Character.isLetter(cch)) {
-                    scanIdent();
-                    return;
-                } else {
-                    throw new ParseException("unexpected character:"+cch);
-                }
-            } // end switch
-        } //end for loop
-    }
-
     private void markTokenPosition() {
         tokenLineNumber=lineNumber;
         tokenLine=line;
         tokenPos=pos;
     }
 
+    public char getCharAterIdent() {
+        return charAterIdent;
+    }
+
     /** parses quoted literal
      * 
      * @param quoteSymbol
-     * @throws IOException
      */
-    private void scanString(int quoteSymbol) throws IOException {
-        markTokenPosition();
-        StringBuilder sb=new StringBuilder();
-        scan_alpha:
-        for (;;) {
-            nextChar();
+    private final class StringScanner implements CharPort {
+        int quoteSymbol;
+        
+        void scanString(int quoteSymbol) {
+            this.quoteSymbol=quoteSymbol;
+            markTokenPosition();
+            setScanner(this);
+            
+        }
+
+        @Override
+        public void postChar(char cch) {
             if (cch==quoteSymbol) {
-                nextChar();
-                break scan_alpha;
+                postToken(STRING);
             } else if (cch==EOF) {
-                break scan_alpha;
+                tokenPort.postParserError("unexpected end of file");
+            } else {
+                tokenStrinBuilder.append(cch);
             }
-            sb.append(cch);
-        } // end for loop
-        tokenString=sb.toString();
-        tokenType=STRING;
+        }
+        
     }
     
-    /**
-     * parses literal
-     * @throws IOException
+    /** parses unquoted identifier
+     * 
+     * @param quoteSymbol
      */
-    private void scanNumber() throws IOException {
-        markTokenPosition();
-        StringBuilder sb=new StringBuilder();
-        scan_alpha:
-        for (;;) {
-            sb.append(cch);
-            nextChar();
+    private final class IdentScanner implements CharPort {
+        
+        void scanIdent(char cch) {
+            markTokenPosition();
+            setScanner(this);
+            tokenStrinBuilder.append(cch);            
+        }
+
+        @Override
+        public void postChar(char cch) {
+            if (Character.isDigit(cch) || Character.isLetter(cch)) {
+                tokenStrinBuilder.append(cch);
+            } else {
+                charAterIdent=cch;
+                postToken(IDENT);
+                chp.postChar(cch);
+            }
+        }
+    }
+    
+    /** parses number
+     * 
+     * @param quoteSymbol
+     */
+    private final class NumScanner implements CharPort {
+        
+        void scanNumber(char cch) {
+            markTokenPosition();
+            tokenStrinBuilder.append(cch);
+            setScanner(this);
+        }
+
+        @Override
+        public void postChar(char cch) {
             switch (cch) {
             case EOF:
             case LPAREN: case RPAREN:
@@ -259,36 +185,49 @@ public class Scanner implements LinePort {
             case RBRACKET: case COMMA: case COLON:
             case SPACE: case TAB:   case NEWL:
             case COMMENT:
-                break scan_alpha;
+                postToken(NUMBER);
+                chp.postChar(cch);
+                break;
+            default:
+                tokenStrinBuilder.append(cch);
             }
-        } // end for loop
-        tokenString=sb.toString();
-        // TODO pares number
-        tokenType=NUMBER;
+        }   
     }
     
-    /**
-     * parses literal
-     * @throws IOException
-     */
-    private void scanIdent() throws IOException {
-        markTokenPosition();
-        StringBuilder sb=new StringBuilder();
-        for (;;) {
-            sb.append(cch);
-            nextChar();
-            if (!Character.isDigit(cch) && !Character.isLetter(cch)) {
-                break;
-            }
-        } // end for loop
-        tokenString=sb.toString();
-        // TODO embedded values
-        tokenType=IDENT;
-    }
+    private final class GeneralScanner implements CharPort {
 
-	@Override
-	public void postLine(String str) {
-		// TODO Auto-generated method stub
-		
-	}
+        /**
+         * determines current lexical token
+         */
+        @Override
+        public void postChar(char cch) {
+            switch (cch) {
+            case LPAREN: case RPAREN:
+            case LBRACE: case RBRACE: case LBRACKET:
+            case RBRACKET: case COMMA: case COLON:
+                markTokenPosition();
+                tokenPort.postToken(cch, null);
+                return;
+            case SPACE: case TAB:   case NEWL:
+                return;
+            case COMMENT:
+                pos=line.length()-1;
+                return;
+            case QUOTE:
+            case QUOTE2:
+                stringScanner.scanString(cch);
+                return;
+            default:
+                if (Character.isDigit(cch)) {
+                    numScanner.scanNumber(cch);
+                    return;
+                } else if (Character.isLetter(cch)) {
+                    identScanner.scanIdent(cch);
+                    return;
+                } else {
+                    tokenPort.postParserError("unexpected character:"+cch);
+                }
+            } // end switch
+        }
+    }
 }

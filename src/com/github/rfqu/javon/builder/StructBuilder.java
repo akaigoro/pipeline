@@ -9,6 +9,6 @@
  */
 package com.github.rfqu.javon.builder;
 
-public interface MapBuilder extends StructBuilder {
-    public void set(String key, Object value);
+public interface StructBuilder {
+    public Object getValue();
 }

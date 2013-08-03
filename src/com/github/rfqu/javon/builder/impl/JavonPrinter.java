@@ -79,7 +79,7 @@ public class JavonPrinter extends JsonPrinter implements JavonBulderFactory {
         }
 
         @Override
-        public MapBuilder asMapBuilder() throws Exception {
+        public MapBuilder asMapBuilder() {
             checkCloseChar();
             return new MapBuilderImpl(sb);
         }

@@ -72,7 +72,7 @@ public class JavonBuilder extends ClassMap implements JavonBulderFactory {
         }
 
         @Override
-        public MapBuilder asMapBuilder() throws Exception {
+        public MapBuilder asMapBuilder() throws ParseException {
             if (! (data instanceof Map)) {
                 throw new ParseException("class "+data.getClass()+" does not implement Map");
             }

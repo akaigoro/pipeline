@@ -9,190 +9,258 @@
  */
 package com.github.rfqu.codec.json.asyncparser;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-
+import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.javon.builder.JsonBulderFactory;
 import com.github.rfqu.javon.builder.ListBuilder;
 import com.github.rfqu.javon.builder.MapBuilder;
-import com.github.rfqu.javon.parser.ParseException;
+import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
 
-/** at least one of following methods should be overriden:
- * newRootObject(),
- * newRootList()
- * 
- * @author ak
- *
- */
-public class JsonParser extends Scanner {
-    protected JsonBulderFactory factory; 
+public class JsonParser {
+    Scanner scanner=new Scanner();
+    protected JsonBulderFactory factory;
+    protected CompletableFuture<Object> res;
+    Parser currentParser;
 
-    public JsonParser(Reader ir) throws IOException {
-        super(new BufferedReader(ir));
-    }
-    
-    public JsonParser(InputStream is) throws IOException {
-        this(new InputStreamReader(is));
+    public JsonParser() {
+        new RootTokenPort();
     }
 
-    public JsonParser(File inputFile) throws IOException {
-        this(new BufferedReader(new FileReader(inputFile)));
-    }
-
-    public JsonParser(String str) throws IOException {
-        this(new StringReader(str));
-    }
-
-    public Object parseWith(JsonBulderFactory factory) throws Exception {
-        this.factory=factory;
-        scan();
-        // skip empty lines
-        skipSpaces();
-        Object res;
-        try {
-            switch (tokenType) {
-            case LBRACKET:
-                res=parseList();
-                break;
-            case LBRACE:
-                res=parseMap();
-                break;
-            default:
-                throw new ParseException("Identifier, { or [ expected");
-            }
-        } catch (Exception e) {
-            throw toParseException(e);
-        }
-        // skip empty lines
-        skipSpaces();
-        if (tokenType!=EOF ) {
-            throw new ParseException("extra text:"+tokenType);
-        }
+    public CompletableFuture<Object> parseWith(JsonBulderFactory factory) throws Exception {
+        this.factory = factory;
+        res = new CompletableFuture<Object>();
+        setCurrentParser(new RootTokenPort());
         return res;
     }
 
-    protected Object parseMap() throws IOException, ParseException, Exception {
-        MapBuilder builder = factory.newMapBuilder();
-        parseMap(builder);
-        return builder.getValue();
+    protected void setCurrentParser(Parser tp) {
+        currentParser=tp;
+        scanner.setTokenPort(tp);
     }
 
-    protected void parseMap(MapBuilder builder) throws IOException, ParseException, Exception {
-        checkAndScan(LBRACE);
-        for (;;) {
-            switch (tokenType) {
-            case COMMA:
-                scan();
-                break;
-            case RBRACE:
-                scan();
-                return;
-            case STRING: 
-            case IDENT: {
-                String key = tokenString;
-                scan();
-                checkAndScan(COLON);
-                Object value=parseValue();
-                builder.set(key, value);
-                break;
-            }
-            default:
-                throw new ParseException("comma  or } expected");
-            }
-        }
+    public void postLine(String inp) {
+        scanner.postLine(inp);
     }
+
 
     /**
-     * allows spare commas
-     */
-    protected void parseList(ListBuilder builder) throws Exception {
-        checkAndScan(LBRACKET);
-        for (;;) {
+      * null, boolean, number, string, list, or map
+      */
+     protected void parseValue(int tokenType, String tokenString) {
+         switch (tokenType) {
+         case LBRACKET:
+             currentParser.parseList();
+             break;
+         case LBRACE:
+             currentParser.parseMap();
+             break;
+         case STRING:
+             String str = tokenString;
+             currentParser.setValue(str);
+             break;
+         case NUMBER:
+             parseNumber(tokenString);
+             break;
+         case IDENT:
+             parseIdent(tokenString);
+             break;
+         default:
+             currentParser.setParseError("value expected, but " + token2Str(tokenType) + " seen");
+         }
+     }
+
+     /**
+      * null or boolean
+      */
+     protected void parseIdent(String tokenString) {
+         if ("null".equals(tokenString)) {
+             currentParser.setValue(null);
+         } else if ("false".equals(tokenString)) {
+             currentParser.setValue(Boolean.FALSE);
+         } else if ("true".equals(tokenString)) {
+             currentParser.setValue(Boolean.TRUE);
+         } else {
+             currentParser.setParseError("invalid identifier");
+         }
+     }
+
+     protected void parseNumber(String tokenString) {
+         Object res;
+         try {
+             res = Integer.valueOf(tokenString);
+         } catch (NumberFormatException e) {
+             try {
+                 res = Double.valueOf(tokenString);
+             } catch (NumberFormatException e1) {
+                 currentParser.setParseError("bad number:" + tokenString);
+                 return;
+             }
+         }
+         currentParser.setValue(res);
+     }
+
+     abstract class Parser implements TokenPort {
+        final Parser parent;
+
+        Parser(Parser parent) {
+            this.parent = parent;
+            setCurrentParser(this);
+        }
+
+        protected void parseList() {
+            ListBuilder builder = factory.newListBuilder();
+            new ListParser(this, builder);
+        }
+
+        protected void parseMap() {
+            MapBuilder builder = factory.newMapBuilder();
+            new MapParser(this, builder);
+        }
+
+        protected void returnValue(Object value) {
+            parent.setValue(value);
+            setCurrentParser(parent);
+        }
+
+        public void postParserError(String message) {
+            setParseError(message);
+        }
+
+        void setParseError(String message) {
+            parent.setParseError(message);
+        }
+
+        void setParseError(Throwable e) {
+            parent.setParseError(e);
+        }
+
+        public abstract void setValue(Object value);
+    }
+
+    class RootTokenPort extends Parser {
+
+        public RootTokenPort() {
+            super(null);
+        }
+
+        @Override
+        public void postToken(int tokenType, String tokenString) {
             switch (tokenType) {
-            case RBRACKET:
-                scan();
-                return;
-            case COMMA:
-                scan();
+            case LBRACKET:
+                parseList();
+                break;
+            case LBRACE:
+                parseMap();
                 break;
             default:
-                Object value=parseValue();
-                builder.add(value);
+                postParserError("Identifier, { or [ expected");
             }
+        }
+
+        @Override
+        public void postParserError(String message) {
+            throw new RuntimeException(message);
+        }
+
+        @Override
+        public void setValue(Object value) {
+            res.post(value);
+        }
+
+        void setParseError(Throwable e) {
+            e.printStackTrace();
+        }
+
+        void setParseError(String message) {
+            System.err.println(message);
+            // TODO print diagnostics, stop the whole process
         }
     }
 
-    protected Object parseList() throws Exception {
-        ListBuilder builder = factory.newListBuilder();
-        parseList(builder);
-        return builder.getValue();
-    }
-    
-    /** 
-     * string, array, map, or object
-     */
-    protected Object parseValue() throws Exception {
-        switch (tokenType) {
-        case LBRACKET:
-            return parseList();
-        case LBRACE:
-            return parseMap();
-        case STRING: {
-            String str=tokenString;
-            scan();
-            return str;
+    class ListParser extends Parser {
+        ListBuilder builder;
+
+        public ListParser(Parser parent, ListBuilder builder) {
+            super(parent);
+            this.builder = builder;
         }
-        case NUMBER: 
-            return parseNumber();
-        case IDENT:
-            return parseIdent();
-        default: 
-            throw new ParseException("value expected, but "+token2Str(tokenType)+" seen");
-        }
-    }
-    
-    protected Object parseNumber() throws ParseException, IOException {
-        Object res;
-        try {
-            res=Integer.valueOf(tokenString);
-        } catch (NumberFormatException e) {
-            try {
-                res=Double.valueOf(tokenString);
-            } catch (NumberFormatException e1) {
-                throw new ParseException("bad number:"+tokenString);
+
+        @Override
+        public void postToken(int tokenType, String tokenString) {
+            switch (tokenType) {
+            case COMMA:
+                return;
+            case RBRACKET:
+                Object value = builder.getValue();
+                returnValue(value);
+                return;
+            default:
+                parseValue(tokenType, tokenString);
+                // parent.postParserError("Identifier, { or [ expected");
             }
         }
-        scan();
-        return res;
-    }
-    
-    /** 
-     * string, array, or object
-     * @return
-     * @throws IOException
-     * @throws ParseException 
-     */
-    protected Object parseIdent() throws Exception {
-        Object res;
-        if ("null".equals(tokenString)) {
-            res=null;
-            scan();
-        } else if ("false".equals(tokenString)) {
-            res=Boolean.FALSE;
-            scan();
-        } else if ("true".equals(tokenString)) {
-            res=Boolean.TRUE;
-            scan();
-        } else {
-            throw new ParseException("invalid identifier");
+
+        @Override
+        public void postParserError(String message) {
+            throw new RuntimeException(message);
         }
-        return res;
+
+        @Override
+        public void setValue(Object value) {
+            builder.add(value);
+        }
+    }
+
+    class MapParser extends Parser {
+        MapBuilder builder;
+        String key;
+        int state = 0;
+
+        public MapParser(Parser parent, MapBuilder builder) {
+            super(parent);
+            this.builder = builder;
+        }
+
+        @Override
+        public void postToken(int tokenType, String tokenString) {
+            switch (state) {
+            case 0:
+                switch (tokenType) {
+                case COMMA:
+                    return;
+                case RBRACE:
+                    Object value = builder.getValue();
+                    returnValue(value);
+                    return;
+                case STRING:
+                case IDENT:
+                    key = tokenString;
+                    state = 1;
+                    break;
+                default:
+                    setParseError("Identifier, { or [ expected");
+                }
+                break;
+            case 1:
+                if (tokenType == COLON) {
+                    state = 2;
+                } else {
+                    setParseError("':' expected");
+                }
+                break;
+            case 2:
+                parseValue(tokenType, tokenString);
+                state=0;
+            }
+        }
+
+        @Override
+        public void postParserError(String message) {
+            throw new RuntimeException(message);
+        }
+
+        @Override
+        public void setValue(Object value) {
+            builder.set(key, value);
+        }
     }
 }
-

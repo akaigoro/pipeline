@@ -9,10 +9,12 @@
  */
 package com.github.rfqu.javon.builder;
 
-public interface ObjectBuilder extends MapBuilder {
-    void instatntiate() throws Exception;
-    void instatntiate(Object... args) throws Exception;
-    ListBuilder asListBuilder() throws Exception;
-    MapBuilder asMapBuilder() throws Exception;
-    public Object getValue();
+import com.github.rfqu.javon.parser.ParseException;
+
+public interface ObjectBuilder extends StructBuilder {
+    public void instatntiate() throws Exception;
+    public void instatntiate(Object... args) throws Exception;
+    public void set(String key, Object value) throws Exception;
+    public ListBuilder asListBuilder() throws Exception;
+    public MapBuilder asMapBuilder() throws ParseException;
 }

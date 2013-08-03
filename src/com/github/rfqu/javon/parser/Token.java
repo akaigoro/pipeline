@@ -19,6 +19,7 @@ enum Token{
                 , STRING((char)(IDENT.ch-1));
     
     public final char ch;
+    
     Token(char ch) {
         this.ch=ch;
     }

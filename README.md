@@ -60,7 +60,6 @@ list.add(map2);
 Architecture
 ------------
 The library consits of three packages:
-
 <br>com.github.rfqu.javon.parser, with main class JavonParser
 <br>com.github.rfqu.javon.builder, with main class JavonBuilder
 <br>com.github.rfqu.javon, which defines interfaces to connect parser and builder.
