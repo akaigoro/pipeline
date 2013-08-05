@@ -7,7 +7,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 import java.util.ArrayList;
 
@@ -18,7 +18,7 @@ import com.github.rfqu.javon.builder.ObjectBuilder;
 import com.github.rfqu.javon.builder.JavonBulderFactory;
 import com.github.rfqu.javon.parser.ParseException;
 
-import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
+import static com.github.rfqu.javon.pushparser.Scanner.*;
 
 public class JavonParser extends JsonParser {
     JavonBulderFactory factory;
@@ -71,7 +71,7 @@ public class JavonParser extends JsonParser {
     class RootTokenPort extends JsonParser.RootTokenPort {
 
         @Override
-        public void postToken(int tokenType, String tokenString) {
+		protected void firstToken(int tokenType, String tokenString) {
             switch (tokenType) {
             case IDENT:
                 parseObject(tokenString);
@@ -85,7 +85,7 @@ public class JavonParser extends JsonParser {
             default:
                 postParserError("Identifier, { or [ expected");
             }
-        }
+		}
     }
     
     class ObjectParser extends Parser {
@@ -100,92 +100,96 @@ public class JavonParser extends JsonParser {
         }
 
         @Override
-        public void postToken(int tokenType, String tokenString) {
-            switch (state) {
-            case 0: // just after class name
-                switch (tokenType) {
-                case LPAREN:
-                    state = 1;
-                    break;
-                default:
-                    state = 5;
-                    instantiate();
-                    postToken(tokenType, tokenString);
-                }
-                break;
-            case 1: // after '(' parse positional arguments
-                switch (tokenType) {
-                case RPAREN: // end args
-                    state = 5;
-                    instantiate();
-                    break;
-                case IDENT:
-                    // lookahead needed to differentiate A and A:A
-                    if (scanner.getCharAterIdent() == COLON) {
-                        instantiate();
-                        state = 2; // 
-                        postToken(tokenType, tokenString);
-                    } else {
-                        parseIdent(tokenString);
-                    }
-                    break;
-                case COMMA:
-                    break;
-                default:
-                    parseValue(tokenType, tokenString);
-                }
-                break;
-             // parse named arguments
-            case 2: // parse key in key-value pair
-                switch (tokenType) {
-                case RPAREN: // end args
-                    state = 5;
-                    break;
-                case COMMA:
-                    break;
-                case IDENT:
-                    key = tokenString;
-                    state = 3;
-                    break;
-                default:
-                    setParseError("comma  or ) expected");
-                }
-                break;
-            case 3: // check ':'
-                if (tokenType == COLON) {
-                    state = 4;
-                } else {
-                    setParseError("':' expected");
-                }
-                break;
-            case 4: // parse value in key-value pair
-                parseValue(tokenType, tokenString);
-                break;
-            case 5: // parse list and map tails
-                switch (tokenType) {
-                case LBRACKET:
-                    state = 1;
-                    try {
-                        ListBuilder listBuilder = builder.asListBuilder();
-                        new ListParser(this, listBuilder);
-                    } catch (Exception e) {
-                        setParseError(e);
-                    }
-                    break;
-                case LBRACE:
-                    try {
-                        MapBuilder mapBuilder = builder.asMapBuilder();
-                        new MapParser(this, mapBuilder);
-                    } catch (ParseException e) {
-                        setParseError(e);
-                    }
-                    break;
-                default:
-                    parent.setValue(builder.getValue());
-                }
-                break;
-            }
-        }
+		public void postToken(int tokenType, String tokenString) {
+			switch (state) {
+			case 0: // just after class name
+				switch (tokenType) {
+				case LPAREN:
+					state = 1;
+					break;
+				default:
+					state = 6;
+					instantiate();
+					postToken(tokenType, tokenString);
+				}
+				break;
+			case 1: // after '(' parse positional arguments
+				switch (tokenType) {
+				case RPAREN: // end args
+					state = 6;
+					instantiate();
+					break;
+				case IDENT: // ambiguity detected
+					key = tokenString;
+					state = 2;
+					break;
+				case COMMA:
+					break;
+				default:
+					parseValue(tokenType, tokenString);
+				}
+				break;
+			case 2: // resolve ambiguity
+				if (tokenType == COLON) {
+					instantiate();
+					state = 5; //
+				} else {
+					parseIdent(key);
+					state=1;
+					currentParser.postToken(tokenType, tokenString);
+				}
+				break;
+			// parse named arguments
+			case 3: // parse key in key-value pair
+				switch (tokenType) {
+				case RPAREN: // end args
+					state = 6;
+					break;
+				case COMMA:
+					break;
+				case IDENT:
+					key = tokenString;
+					state = 4;
+					break;
+				default:
+					setParseError("comma  or ) expected");
+				}
+				break;
+			case 4: // check ':'
+				if (tokenType == COLON) {
+					state = 5;
+				} else {
+					setParseError("':' expected");
+				}
+				break;
+			case 5: // parse value in key-value pair
+				parseValue(tokenType, tokenString);
+				break;
+			case 6: // parse list and map tails
+				switch (tokenType) {
+				case LBRACKET:
+					try {
+						ListBuilder listBuilder = builder.asListBuilder();
+						new ListParser(this, listBuilder);
+					} catch (Exception e) {
+						setParseError(e);
+					}
+					break;
+				case LBRACE:
+					try {
+						MapBuilder mapBuilder = builder.asMapBuilder();
+						new MapParser(this, mapBuilder);
+					} catch (ParseException e) {
+						setParseError(e);
+					}
+					break;
+				default:
+					returnValue(builder.getValue());
+					currentParser.postToken(tokenType, tokenString);
+				}
+				break;
+			}
+		}
 
         @Override
         public void setValue(Object value) {
@@ -197,9 +201,11 @@ public class JavonParser extends JsonParser {
                     }
                     args.add(value);
                     break;
-                case 4: // parse value in key-value pair
+                case 5: // parse value in key-value pair
                     builder.set(key, value);
-                    state=2;
+                    state=3;
+                    break;
+                case 6: // when processing list and map tails, ListParser or MapParser returns
                     break;
                 default:
                     setParseError("internal error: call to setValue when state="+state);
@@ -226,11 +232,6 @@ public class JavonParser extends JsonParser {
             } catch (Exception e) {
                 setParseError(e);
             }
-        }
-
-        @Override
-        public void postParserError(String message) {
-            throw new RuntimeException(message);
         }
     }
 }

@@ -7,13 +7,15 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.javon.builder.JsonBulderFactory;
 import com.github.rfqu.javon.builder.ListBuilder;
 import com.github.rfqu.javon.builder.MapBuilder;
-import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
+import com.github.rfqu.javon.parser.ParseException;
+
+import static com.github.rfqu.javon.pushparser.Scanner.*;
 
 public class JsonParser {
     Scanner scanner=new Scanner();
@@ -137,6 +139,9 @@ public class JsonParser {
     }
 
     class RootTokenPort extends Parser {
+    	Object resValue=null;
+    	Throwable resError=null;
+    	boolean first=true;
 
         public RootTokenPort() {
             super(null);
@@ -144,35 +149,58 @@ public class JsonParser {
 
         @Override
         public void postToken(int tokenType, String tokenString) {
-            switch (tokenType) {
-            case LBRACKET:
-                parseList();
-                break;
-            case LBRACE:
-                parseMap();
-                break;
-            default:
-                postParserError("Identifier, { or [ expected");
-            }
+        	if (first) {
+        		first=false;
+                firstToken(tokenType, tokenString);
+        	} else {
+        		if (tokenType!=EOF) {
+                    postParserError("EOF expected");
+            	} else {
+            		if ((resValue==null) && (resError==null)) {
+                        postParserError("unexpected EOF");
+                	}
+            		if (res.isDone()) {
+            			throw new RuntimeException();
+            		}
+                	if (resError!=null) {
+                        res.postFailure(resError);
+                	} else {
+                		res.post(resValue);
+                	}
+            	}
+        	}
         }
 
-        @Override
-        public void postParserError(String message) {
-            throw new RuntimeException(message);
-        }
+		protected void firstToken(int tokenType, String tokenString) {
+			switch (tokenType) {
+			case LBRACKET:
+			    parseList();
+			    break;
+			case LBRACE:
+			    parseMap();
+			    break;
+			default:
+			    postParserError("{ or [ expected");
+			}
+		}
 
         @Override
         public void setValue(Object value) {
-            res.post(value);
+        	if (resValue==null) {
+        		resValue=value;
+        	} else {
+        		setParseError("EOF expected");
+        	}
         }
 
         void setParseError(Throwable e) {
-            e.printStackTrace();
+        	if (resError==null) {
+        		resError=scanner.toParseException(e); // only first error matters
+        	}
         }
 
         void setParseError(String message) {
-            System.err.println(message);
-            // TODO print diagnostics, stop the whole process
+        	setParseError(new ParseException(message));
         }
     }
 

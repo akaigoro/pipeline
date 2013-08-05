@@ -24,7 +24,7 @@ public class ParserBuilderTest extends JavonParserTest {
         assertEquals(exp, res);
     }
 
-    public static class D extends JsonMap{
+    public static class D extends JsonMap {
 
         public String toString() {
             StringBuilder sb=new StringBuilder();

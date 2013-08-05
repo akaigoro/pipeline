@@ -8,42 +8,64 @@ import java.util.List;
 import org.junit.Test;
 
 import com.github.rfqu.javon.builder.impl.JavonBuilder;
+import com.github.rfqu.javon.builder.impl.JavonPrinter;
 
 public class so1688099test {
-	static final String inp=
-"Data ("+
-"    title: 'ComputingandInformationsystems',"+
-"    id: 1,"+
-"    children: true,"+
-"    groups: [Data("+
-"        title: 'LeveloneCIS',"+
-"        id: 2,"+
-"        children: true,"+
-"        groups: [Data ("+
-"            title: 'IntroToComputingandInternet',"+
-"            id: 3,"+
-"            children: false,"+
-"            groups: []"+
-"        )]"+
-"    )]"+
+	protected static final String inp=
+"Data("+
+    "title:\"ComputingandInformationsystems\","+
+    "id:1,"+
+    "children:true,"+
+    "groups:[Data("+
+        "title:\"LeveloneCIS\","+
+        "id:2,"+
+        "children:true,"+
+        "groups:[Data("+
+            "title:\"IntroToComputingandInternet\","+
+            "id:3,"+
+            "children:false,"+
+            "groups:[]"+
+        ")]"+
+    ")]"+
 ")";			
 	
-static final String exp="title:ComputingandInformationsystems,id:1,children:true,"+
-"groups:[title:LeveloneCIS,id:2,children:true,"+
-"groups:[title:IntroToComputingandInternet,id:3,children:false,groups:[]]]";
-	
 	@Test
-    public void test() throws IOException, Exception {
-//		InputStream r = getClass().getResourceAsStream("so1688099.json");
+    public void testWithPrinter() throws IOException, Exception {
+        JavonParser mp=new JavonParser(inp);
+        JavonPrinter pr = new JavonPrinter();
+        Object obj = mp.parseWith(pr);
+		String res = obj.toString();
+		compareStrings(inp, res);
+        assertEquals(inp, res);
+    }
+
+	@Test
+    public void testWithBuilder() throws IOException, Exception {
         JavonParser mp=new JavonParser(inp);
         JavonBuilder bd = new JavonBuilder();
         bd.put("Data", Data.class);
         Object obj = mp.parseWith(bd);
 		String res = obj.toString();
-        assertEquals(exp, res);
-    }
-
+        compareStrings(inp, res);
+        assertEquals(inp, res);
+	}
 	
+	protected void compareStrings(String exp, String act) {
+		final int actLength = act.length();
+		final int expLength = exp.length();
+		if (expLength!=actLength) {
+			System.out.println("exp:"+expLength+" but act.length="+actLength);
+		}
+		int len=Math.min(actLength, expLength);
+		for (int k=0; k<len; k++) {
+			if (act.charAt(k)!=exp.charAt(k)) {
+				System.out.println(exp.substring(k));
+				System.out.println(act.substring(k));
+				break;
+			}
+		}
+	}
+
 	public static class Data {
 		private String title;
 		private int id;
@@ -83,7 +105,7 @@ static final String exp="title:ComputingandInformationsystems,id:1,children:true
 		}
 
 		public String toString() {
-			return String.format("title:%s,id:%d,children:%s,groups:%s", title,
+			return String.format("Data(title:\"%s\",id:%d,children:%s,groups:%s)", title,
 					id, children, groups);
 		}
 	}

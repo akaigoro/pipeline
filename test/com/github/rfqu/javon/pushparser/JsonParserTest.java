@@ -1,18 +1,30 @@
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.javon.builder.impl.JsonPrinter;
+import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.javon.pushparser.JsonParser;
 
 //import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
 
-public class AsyncParserTest {
+public class JsonParserTest {
 
+    @Test
+    public void testN() throws Exception {
+        checkN("a");
+        checkN("null");
+        checkN("1");
+        checkN("[] {}");
+        checkN("[1,2], [3]");
+    }
+    
     @Test
     public void testList() throws Exception {
         check("[]");
@@ -36,6 +48,7 @@ public class AsyncParserTest {
         JsonPrinter pr = new JsonPrinter();
         CompletableFuture<Object> res = tp.parseWith(pr);
         tp.postLine(inp);
+        tp.postLine(null);
         assertTrue(res.isDone());
         String resS = res.get().toString();
         assertEquals(exp, resS);
@@ -43,5 +56,21 @@ public class AsyncParserTest {
 
     protected void check(String inp) throws IOException, Exception {
         check(inp, inp);
+    }
+
+    protected void checkN(String inp) throws IOException, Exception {
+        JsonParser tp = new JsonParser();
+        JsonPrinter pr = new JsonPrinter();
+        CompletableFuture<Object> res = tp.parseWith(pr);
+        tp.postLine(inp);
+        tp.postLine(null);
+        assertTrue(res.isDone());
+        try {
+			res.get();
+			fail("ExecutionException expected");
+		} catch (ExecutionException e) {
+			ParseException pe=(ParseException) e.getCause();
+			System.out.println(pe.getMessage());
+		}
     }
 }

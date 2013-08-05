@@ -8,12 +8,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 /**
  * output port for characters
  */
-public interface TokenPort {
-    void postToken(int tokenType, String tokenString);
-    void postParserError(String message);
+public interface LinePort {
+
+	public void postLine(String str);
+	
 }

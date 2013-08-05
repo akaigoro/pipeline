@@ -102,6 +102,7 @@ public class JsonPrinter implements JsonBulderFactory {
 
         
         void log(String procName, Object... args) {
+        	/*
             System.out.print(getClass().getSimpleName());
             System.out.print(".");
             System.out.print(procName);
@@ -111,6 +112,7 @@ public class JsonPrinter implements JsonBulderFactory {
                 System.out.print(arg);
             }
             System.out.println();
+            */
         }
     }
     

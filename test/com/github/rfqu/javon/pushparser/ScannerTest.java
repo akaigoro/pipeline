@@ -1,4 +1,4 @@
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,9 +7,12 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
+import com.github.rfqu.javon.pushparser.Scanner;
+import com.github.rfqu.javon.pushparser.TokenPort;
 
-public class AsyncScannerTest {
+import static com.github.rfqu.javon.pushparser.Scanner.*;
+
+public class ScannerTest {
 
     @Test
     public void testList() throws Exception {

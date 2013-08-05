@@ -7,7 +7,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.codec.json.asyncparser;
+package com.github.rfqu.javon.pushparser;
 
 import com.github.rfqu.javon.parser.ParseException;
 
@@ -37,7 +37,6 @@ public class Scanner implements LinePort {
     private String line;
     private int lineNumber=0;
     private int pos=0;
-    private char charAterIdent;
     
     private String tokenLine;
     private int tokenLineNumber;
@@ -76,7 +75,7 @@ public class Scanner implements LinePort {
         chp.postChar((char) NEWL);
     } 
     
-    protected ParseException toParseException(Exception e) throws ParseException {
+    protected ParseException toParseException(Throwable e) {
         StringBuilder sb=new StringBuilder("\n");
         if (e instanceof ParseException) {
             sb.append("Syntax error");
@@ -107,10 +106,6 @@ public class Scanner implements LinePort {
         tokenLineNumber=lineNumber;
         tokenLine=line;
         tokenPos=pos;
-    }
-
-    public char getCharAterIdent() {
-        return charAterIdent;
     }
 
     /** parses quoted literal
@@ -157,7 +152,6 @@ public class Scanner implements LinePort {
             if (Character.isDigit(cch) || Character.isLetter(cch)) {
                 tokenStrinBuilder.append(cch);
             } else {
-                charAterIdent=cch;
                 postToken(IDENT);
                 chp.postChar(cch);
             }
@@ -225,7 +219,8 @@ public class Scanner implements LinePort {
                     identScanner.scanIdent(cch);
                     return;
                 } else {
-                    tokenPort.postParserError("unexpected character:"+cch);
+                    markTokenPosition();
+                    tokenPort.postParserError("unexpected character:'"+cch+"'");
                 }
             } // end switch
         }
