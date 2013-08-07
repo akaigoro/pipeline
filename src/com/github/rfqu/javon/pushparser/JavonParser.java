@@ -11,28 +11,22 @@ package com.github.rfqu.javon.pushparser;
 
 import java.util.ArrayList;
 
-import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.ListBuilder;
+import com.github.rfqu.json.builder.MapBuilder;
 import com.github.rfqu.javon.builder.ObjectBuilder;
 import com.github.rfqu.javon.builder.JavonBulderFactory;
-import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.json.parser.ParseException;
+import com.github.rfqu.json.pushparser.JsonParser;
 
-import static com.github.rfqu.javon.pushparser.Scanner.*;
+import static com.github.rfqu.json.pushparser.Scanner.*;
 
 public class JavonParser extends JsonParser {
     JavonBulderFactory factory;
 
-    public JavonParser() {
-        new RootTokenPort();
-    }
-
-    public CompletableFuture<Object> parseWith(JavonBulderFactory factory) throws Exception {
-        super.factory = factory;
+    public JavonParser(JavonBulderFactory factory) {
+        super(factory);
         this.factory = factory;
-        res = new CompletableFuture<Object>();
-        setCurrentParser(new RootTokenPort());
-        return res;
+        new RootTokenPort();
     }
 
     protected void setCurrentParser(Parser tp) {
@@ -107,13 +101,13 @@ public class JavonParser extends JsonParser {
 				case LPAREN:
 					state = 1;
 					break;
-				default:
+				default: // object without arguments
 					state = 6;
 					instantiate();
 					postToken(tokenType, tokenString);
 				}
 				break;
-			case 1: // after '(' parse positional arguments
+			case 1: // right after '(' parse positional arguments
 				switch (tokenType) {
 				case RPAREN: // end args
 					state = 6;
@@ -129,13 +123,13 @@ public class JavonParser extends JsonParser {
 					parseValue(tokenType, tokenString);
 				}
 				break;
-			case 2: // resolve ambiguity
+			case 2: // resolve ambiguity a, or a:v
 				if (tokenType == COLON) {
 					instantiate();
-					state = 5; //
+					state = 5; // go to named args
 				} else {
+                    state=1; // back to positional args
 					parseIdent(key);
-					state=1;
 					currentParser.postToken(tokenType, tokenString);
 				}
 				break;
@@ -215,13 +209,10 @@ public class JavonParser extends JsonParser {
             }
         }
 
-        boolean instantiated=false;
-        
         protected void instantiate() {
-            if (instantiated) {
+            if (builder.isInstantiated()) {
                 return;
             }
-            instantiated=true;
             try {
                 if (args==null) {
                     builder.instatntiate();

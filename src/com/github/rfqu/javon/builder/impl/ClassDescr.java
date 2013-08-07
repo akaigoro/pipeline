@@ -18,7 +18,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.TreeSet;
 
-import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.json.parser.ParseException;
 
 public class ClassDescr {
     private static final HashMap<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS

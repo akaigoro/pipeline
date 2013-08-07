@@ -21,6 +21,9 @@ import java.util.ArrayList;
 
 import com.github.rfqu.javon.builder.JavonBulderFactory;
 import com.github.rfqu.javon.builder.ObjectBuilder;
+import com.github.rfqu.json.builder.JsonBulderFactory;
+import com.github.rfqu.json.parser.JsonParser;
+import com.github.rfqu.json.parser.ParseException;
 
 /** at least one of following methods should be overriden:
  * newRootObject(),
@@ -32,25 +35,13 @@ import com.github.rfqu.javon.builder.ObjectBuilder;
 public class JavonParser extends JsonParser {
 	protected JavonBulderFactory factory; 
 
-    public JavonParser(Reader ir) throws IOException {
-        super(new BufferedReader(ir));
-    }
-    
-    public JavonParser(InputStream is) throws IOException {
-        this(new InputStreamReader(is));
+    public JavonParser(JavonBulderFactory factory) {
+        super(factory);
+        this.factory = factory;
     }
 
-    public JavonParser(File inputFile) throws IOException {
-        this(new BufferedReader(new FileReader(inputFile)));
-    }
-
-    public JavonParser(String str) throws IOException {
-        this(new StringReader(str));
-    }
-
-    public Object parseWith(JavonBulderFactory factory) throws Exception {
-        this.factory=factory;
-        super.factory=factory;
+    public Object parseFrom(Reader ir) throws IOException, ParseException {
+        setReader(new BufferedReader(ir));
         scan();
         // skip empty lines
         skipSpaces();

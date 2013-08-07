@@ -8,7 +8,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.github.rfqu.javon.pushparser;
+package com.github.rfqu.json.pushparser;
 
 /**
  * output port for characters

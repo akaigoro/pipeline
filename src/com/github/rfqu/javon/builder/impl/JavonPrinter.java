@@ -10,8 +10,9 @@
 package com.github.rfqu.javon.builder.impl;
 
 import com.github.rfqu.javon.builder.JavonBulderFactory;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.ListBuilder;
+import com.github.rfqu.json.builder.MapBuilder;
+import com.github.rfqu.json.builder.impl.JsonPrinter;
 import com.github.rfqu.javon.builder.ObjectBuilder;
 
 public class JavonPrinter extends JsonPrinter implements JavonBulderFactory {
@@ -26,19 +27,27 @@ public class JavonPrinter extends JsonPrinter implements JavonBulderFactory {
     class ObjectBuilderImpl extends Printer implements ObjectBuilder {
         String className;
         boolean first=true;
+        boolean instantiated=false;
 
         public ObjectBuilderImpl(String className) {
             this.className=className;
         }
 
         @Override
+        public boolean isInstantiated() {
+            return instantiated;
+        }
+
+        @Override
         public void instatntiate() throws Exception {
-           log("instatntiate");
-           sb.append(className);
+            instantiated=true;
+            log("instatntiate");
+            sb.append(className);
         }
 
         @Override
         public void instatntiate(Object... args) throws Exception {
+            instantiated=true;
             log("instatntiate", args);
             sb.append(className);
             if (args.length>0) {

@@ -7,11 +7,9 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.builder.impl;
+package com.github.rfqu.json.builder.impl;
 
-import com.github.rfqu.javon.builder.JsonBulderFactory;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.*;
 
 public class JsonPrinter implements JsonBulderFactory {
     Printer pr=new Printer();
@@ -42,9 +40,9 @@ public class JsonPrinter implements JsonBulderFactory {
         
     }
 
-    static class MyStringBuilder {
+    public static class MyStringBuilder {
         StringBuilder sb=new StringBuilder();
-        char closingChar='0';
+        public char closingChar='0';
         
         public void append(char ch) {
             sb.append(ch);
@@ -60,8 +58,8 @@ public class JsonPrinter implements JsonBulderFactory {
         }
     }
     
-    static class Printer {
-        MyStringBuilder sb;
+    public static class Printer {
+        protected MyStringBuilder sb;
         
         public Printer(MyStringBuilder sb) {
             this.sb = sb;
@@ -101,7 +99,7 @@ public class JsonPrinter implements JsonBulderFactory {
         }
 
         
-        void log(String procName, Object... args) {
+        public void log(String procName, Object... args) {
         	/*
             System.out.print(getClass().getSimpleName());
             System.out.print(".");
@@ -116,7 +114,7 @@ public class JsonPrinter implements JsonBulderFactory {
         }
     }
     
-    class ListBuilderImpl extends Printer implements ListBuilder {
+    public class ListBuilderImpl extends Printer implements ListBuilder {
         private boolean first=true;
 
         public ListBuilderImpl(MyStringBuilder sb) {
@@ -141,7 +139,7 @@ public class JsonPrinter implements JsonBulderFactory {
         }
     }
     
-    class MapBuilderImpl extends Printer implements MapBuilder {
+    public class MapBuilderImpl extends Printer implements MapBuilder {
         private boolean first=true;
 
         public MapBuilderImpl(MyStringBuilder sb) {

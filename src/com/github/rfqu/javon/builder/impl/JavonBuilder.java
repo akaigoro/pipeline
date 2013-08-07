@@ -13,10 +13,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.rfqu.javon.builder.JavonBulderFactory;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.impl.JsonList;
+import com.github.rfqu.json.builder.impl.JsonMap;
+import com.github.rfqu.json.builder.*;
 import com.github.rfqu.javon.builder.ObjectBuilder;
-import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.json.parser.ParseException;
 
 public class JavonBuilder extends ClassMap implements JavonBulderFactory {
 
@@ -46,6 +47,11 @@ public class JavonBuilder extends ClassMap implements JavonBulderFactory {
             this.descr=descr;
         }
 
+        @Override
+        public boolean isInstantiated() {
+            return data!=null;
+        }
+        
         @Override
         public void instatntiate() throws Exception {
             data=descr.newInstance();

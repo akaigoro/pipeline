@@ -7,12 +7,12 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.pushparser;
+package com.github.rfqu.json.pushparser;
 
-import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.json.parser.ParseException;
 
 public class Scanner implements LinePort {
-    protected static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
+    public static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
             , EOF=Character.MAX_VALUE
@@ -55,7 +55,7 @@ public class Scanner implements LinePort {
         chp=p;
     }
     
-    protected void setTokenPort(TokenPort tp) {
+    public void setTokenPort(TokenPort tp) {
         tokenPort=tp;
     }
 
@@ -203,9 +203,6 @@ public class Scanner implements LinePort {
                 tokenPort.postToken(cch, null);
                 return;
             case SPACE: case TAB:   case NEWL:
-                return;
-            case COMMENT:
-                pos=line.length()-1;
                 return;
             case QUOTE:
             case QUOTE2:

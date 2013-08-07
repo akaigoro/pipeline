@@ -7,7 +7,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.parser;
+package com.github.rfqu.json.parser;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,9 +18,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 
-import com.github.rfqu.javon.builder.JsonBulderFactory;
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.JsonBulderFactory;
+import com.github.rfqu.json.builder.ListBuilder;
+import com.github.rfqu.json.builder.MapBuilder;
 
 /** at least one of following methods should be overriden:
  * newRootObject(),
@@ -30,26 +30,14 @@ import com.github.rfqu.javon.builder.MapBuilder;
  *
  */
 public class JsonParser extends Scanner {
-    protected JsonBulderFactory factory; 
+    protected final JsonBulderFactory factory; 
 
-    public JsonParser(Reader ir) throws IOException {
-        super(new BufferedReader(ir));
-    }
-    
-    public JsonParser(InputStream is) throws IOException {
-        this(new InputStreamReader(is));
+    public JsonParser(JsonBulderFactory factory) {
+        this.factory = factory;
     }
 
-    public JsonParser(File inputFile) throws IOException {
-        this(new BufferedReader(new FileReader(inputFile)));
-    }
-
-    public JsonParser(String str) throws IOException {
-        this(new StringReader(str));
-    }
-
-    public Object parseWith(JsonBulderFactory factory) throws Exception {
-        this.factory=factory;
+    public Object parseFrom(Reader ir) throws IOException, ParseException {
+        setReader(new BufferedReader(ir));
         scan();
         // skip empty lines
         skipSpaces();
@@ -74,6 +62,18 @@ public class JsonParser extends Scanner {
             throw new ParseException("extra text:"+tokenType);
         }
         return res;
+    }
+    
+    public Object parseFrom(InputStream is) throws IOException, ParseException {
+        return parseFrom(new InputStreamReader(is));
+    }
+
+    public Object parseFrom(File inputFile) throws IOException, ParseException {
+        return parseFrom(new BufferedReader(new FileReader(inputFile)));
+    }
+
+    public Object parseFrom(String str) throws IOException, ParseException {
+        return parseFrom(new StringReader(str));
     }
 
     protected Object parseMap() throws IOException, ParseException, Exception {

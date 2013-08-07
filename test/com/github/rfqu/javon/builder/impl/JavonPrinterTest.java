@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.github.rfqu.javon.builder.ListBuilder;
-import com.github.rfqu.javon.builder.MapBuilder;
+import com.github.rfqu.json.builder.ListBuilder;
+import com.github.rfqu.json.builder.MapBuilder;
 import com.github.rfqu.javon.builder.impl.JavonPrinter;
 
 public class JavonPrinterTest {

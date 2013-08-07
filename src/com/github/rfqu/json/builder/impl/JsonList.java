@@ -7,42 +7,37 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.builder.impl;
+package com.github.rfqu.json.builder.impl;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 
 /**
- * A Map that prints itself in Json style
+ * A List that prints itself in Json style
  */
-public class JsonMap extends LinkedHashMap<String,Object> {
+public class JsonList extends ArrayList<Object>{
 
     @Override
     public String toString() {
-        Iterator<Entry<String,Object>> i = entrySet().iterator();
-        if (! i.hasNext())
-            return "{}";
+        Iterator<Object> it = iterator();
+        if (! it.hasNext())
+            return "[]";
         
         StringBuilder sb = new StringBuilder();
-        sb.append('{');
+        sb.append('[');
         for (;;) {
-            Entry<String,Object> e = i.next();
-            String key = e.getKey();
-            Object value = e.getValue();
-            sb.append('"');
-            sb.append(key);
-            sb.append('"');
-            sb.append(':');
-            if (value instanceof String){
+            Object e = it.next();
+            if (e == this) {
+                sb.append("(this Collection)");
+            } else if (e instanceof String){
                 sb.append('"');
-                sb.append(value);
+                sb.append(e);
                 sb.append('"');
             } else {
-                sb.append(value);
+                sb.append(e);
             }
-            if (! i.hasNext())
-                return sb.append('}').toString();
+            if (! it.hasNext())
+                return sb.append(']').toString();
             sb.append(',');
         }
     }

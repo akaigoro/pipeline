@@ -1,4 +1,4 @@
-package com.github.rfqu.javon.parser;
+package com.github.rfqu.json.parser;
 
 import static org.junit.Assert.assertEquals;
 
@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import com.github.rfqu.javon.builder.impl.JsonPrinter;
+import com.github.rfqu.json.builder.impl.JsonPrinter;
 
 public class JsonParserTest {
 
@@ -28,9 +28,9 @@ public class JsonParserTest {
     }
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JsonParser mp=new JsonParser(inp);
         JsonPrinter pr = new JsonPrinter();
-        String res = mp.parseWith(pr).toString();
+        JsonParser mp=new JsonParser(pr);
+        String res = mp.parseFrom(inp).toString();
         assertEquals(exp, res);
     }
 

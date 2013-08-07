@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.javon.builder.impl.JavonPrinter;
-import com.github.rfqu.javon.parser.ParseException;
+import com.github.rfqu.json.parser.ParseException;
 import com.github.rfqu.javon.pushparser.JavonParser;
 
 public class JavonParserTest {
@@ -27,7 +27,8 @@ public class JavonParserTest {
     public void testObj() throws Exception {
         check("A");
         check("A()","A");
-        check("A(1)","A(1)");
+        check("A(1)");
+        check("A(a,a,a:a,a:a)"); // ident both as positional arg and a key
         check("A(0,a:1)","A(0,a:1)");
         check("A(a:1)","A(a:1)");
         check("A(a:B(1))");
@@ -57,9 +58,9 @@ public class JavonParserTest {
     }
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JavonParser mp=new JavonParser();
         JavonPrinter pr = new JavonPrinter();
-        CompletableFuture<Object> res = mp.parseWith(pr);
+        JavonParser mp=new JavonParser(pr);
+        CompletableFuture<Object> res = mp.getResult();
         mp.postLine(inp);
         mp.postLine(null); // EOF needed to determine end of text
         assertTrue(res.isDone());
@@ -68,9 +69,9 @@ public class JavonParserTest {
     }
 
     protected void checkN(String inp) throws IOException, Exception {
-        JavonParser mp=new JavonParser();
         JavonPrinter pr = new JavonPrinter();
-        CompletableFuture<Object> res = mp.parseWith(pr);
+        JavonParser mp=new JavonParser(pr);
+        CompletableFuture<Object> res = mp.getResult();
         mp.postLine(inp);
         mp.postLine(null); // EOF needed to determine end of text
         assertTrue(res.isDone());

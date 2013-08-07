@@ -1,4 +1,4 @@
-package com.github.rfqu.javon.pushparser;
+package com.github.rfqu.json.pushparser;
 
 import static org.junit.Assert.*;
 
@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutionException;
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.javon.builder.impl.JsonPrinter;
-import com.github.rfqu.javon.parser.ParseException;
-import com.github.rfqu.javon.pushparser.JsonParser;
+import com.github.rfqu.json.builder.impl.JsonPrinter;
+import com.github.rfqu.json.parser.ParseException;
+import com.github.rfqu.json.pushparser.JsonParser;
 
 //import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
 
@@ -44,9 +44,9 @@ public class JsonParserTest {
     }
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JsonParser tp = new JsonParser();
         JsonPrinter pr = new JsonPrinter();
-        CompletableFuture<Object> res = tp.parseWith(pr);
+        JsonParser tp = new JsonParser(pr);
+        CompletableFuture<Object> res = tp.getResult();
         tp.postLine(inp);
         tp.postLine(null);
         assertTrue(res.isDone());
@@ -59,9 +59,9 @@ public class JsonParserTest {
     }
 
     protected void checkN(String inp) throws IOException, Exception {
-        JsonParser tp = new JsonParser();
         JsonPrinter pr = new JsonPrinter();
-        CompletableFuture<Object> res = tp.parseWith(pr);
+        JsonParser tp = new JsonParser(pr);
+        CompletableFuture<Object> res = tp.getResult();
         tp.postLine(inp);
         tp.postLine(null);
         assertTrue(res.isDone());

@@ -13,9 +13,9 @@ import com.github.rfqu.javon.builder.impl.JavonPrinter;
 public class so1688099test extends com.github.rfqu.javon.parser.so1688099test {
 	@Test
     public void testWithPrinter() throws IOException, Exception {
-        JavonParser mp=new JavonParser();
         JavonPrinter pr = new JavonPrinter();
-        CompletableFuture<Object> res = mp.parseWith(pr);
+        JavonParser mp=new JavonParser(pr);
+        CompletableFuture<Object> res = mp.getResult();
         mp.postLine(inp);
         mp.postLine(null); // EOF needed to determine end of text
         assertTrue(res.isDone());
@@ -26,9 +26,9 @@ public class so1688099test extends com.github.rfqu.javon.parser.so1688099test {
 
 	@Test
     public void testWithBuilder() throws IOException, Exception {
-        JavonParser mp=new JavonParser();
         JavonPrinter pr = new JavonPrinter();
-        CompletableFuture<Object> res = mp.parseWith(pr);
+        JavonParser mp=new JavonParser(pr);
+        CompletableFuture<Object> res = mp.getResult();
         mp.postLine(inp);
         mp.postLine(null); // EOF needed to determine end of text
         assertTrue(res.isDone());

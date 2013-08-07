@@ -7,7 +7,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.parser;
+package com.github.rfqu.json.parser;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -48,7 +48,7 @@ public class Scanner {
     protected int tokenType;
     protected String tokenString;
     
-    public Scanner(BufferedReader in) throws IOException {
+    public void setReader(BufferedReader in) throws IOException {
         this.in = in;
         // skip empty lines
         for (;;) {

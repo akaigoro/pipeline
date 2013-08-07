@@ -34,9 +34,9 @@ public class JavonParserTest {
     }
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JavonParser mp=new JavonParser(inp);
         JavonPrinter pr = new JavonPrinter();
-        String res = mp.parseWith(pr).toString();
+        JavonParser mp=new JavonParser(pr);
+        String res = mp.parseFrom(inp).toString();
         assertEquals(exp, res);
     }
 

@@ -1,4 +1,4 @@
-package com.github.rfqu.javon.pushparser;
+package com.github.rfqu.json.pushparser;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,10 +7,10 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-import com.github.rfqu.javon.pushparser.Scanner;
-import com.github.rfqu.javon.pushparser.TokenPort;
+import com.github.rfqu.json.pushparser.Scanner;
+import com.github.rfqu.json.pushparser.TokenPort;
 
-import static com.github.rfqu.javon.pushparser.Scanner.*;
+import static com.github.rfqu.json.pushparser.Scanner.*;
 
 public class ScannerTest {
 

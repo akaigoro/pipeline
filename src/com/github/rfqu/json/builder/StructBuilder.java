@@ -7,16 +7,8 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.github.rfqu.javon.parser;
+package com.github.rfqu.json.builder;
 
-public class ParseException extends Exception {
-
-    public ParseException(String string) {
-        super(string);
-    }
-
-    public ParseException(String string, Throwable cause) {
-        super(string, cause);
-    }
-
+public interface StructBuilder {
+    public Object getValue();
 }

@@ -8,18 +8,18 @@ import java.io.IOException;
 
 import com.github.rfqu.javon.parser.JavonParser;
 import com.github.rfqu.javon.builder.impl.JavonBuilder;
-import com.github.rfqu.javon.builder.impl.JsonList;
-import com.github.rfqu.javon.builder.impl.JsonMap;
+import com.github.rfqu.json.builder.impl.JsonList;
+import com.github.rfqu.json.builder.impl.JsonMap;
 
 public class ParserBuilderTest extends JavonParserTest {
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JavonParser mp=new JavonParser(inp);
         JavonBuilder bd = new JavonBuilder();
+        JavonParser mp=new JavonParser(bd);
         bd.put("A", A.class);
         bd.put("B", B.class);
         bd.put("D", D.class);
-        Object obj = mp.parseWith(bd);
+        Object obj = mp.parseFrom(inp);
         String res = obj.toString();
         assertEquals(exp, res);
     }

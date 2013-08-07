@@ -31,9 +31,9 @@ public class so1688099test {
 	
 	@Test
     public void testWithPrinter() throws IOException, Exception {
-        JavonParser mp=new JavonParser(inp);
         JavonPrinter pr = new JavonPrinter();
-        Object obj = mp.parseWith(pr);
+        JavonParser mp=new JavonParser(pr);
+        Object obj = mp.parseFrom(inp);
 		String res = obj.toString();
 		compareStrings(inp, res);
         assertEquals(inp, res);
@@ -41,10 +41,10 @@ public class so1688099test {
 
 	@Test
     public void testWithBuilder() throws IOException, Exception {
-        JavonParser mp=new JavonParser(inp);
         JavonBuilder bd = new JavonBuilder();
+        JavonParser mp=new JavonParser(bd);
         bd.put("Data", Data.class);
-        Object obj = mp.parseWith(bd);
+        Object obj = mp.parseFrom(inp);
 		String res = obj.toString();
         compareStrings(inp, res);
         assertEquals(inp, res);
