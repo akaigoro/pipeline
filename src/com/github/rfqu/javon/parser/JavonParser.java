@@ -10,18 +10,12 @@
 package com.github.rfqu.javon.parser;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.ArrayList;
 
 import com.github.rfqu.javon.builder.JavonBulderFactory;
 import com.github.rfqu.javon.builder.ObjectBuilder;
-import com.github.rfqu.json.builder.JsonBulderFactory;
 import com.github.rfqu.json.parser.JsonParser;
 import com.github.rfqu.json.parser.ParseException;
 

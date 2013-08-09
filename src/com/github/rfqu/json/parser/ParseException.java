@@ -9,7 +9,7 @@
  */
 package com.github.rfqu.json.parser;
 
-public class ParseException extends Exception {
+public class ParseException extends RuntimeException {
 
     public ParseException(String string) {
         super(string);

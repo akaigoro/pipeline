@@ -13,11 +13,10 @@ import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.json.builder.JsonBulderFactory;
 import com.github.rfqu.json.builder.ListBuilder;
 import com.github.rfqu.json.builder.MapBuilder;
-import com.github.rfqu.json.parser.ParseException;
 
 import static com.github.rfqu.json.pushparser.Scanner.*;
 
-public class JsonParser {
+public class JsonParser extends TokenPort {
     protected Scanner scanner=new Scanner();
     protected final JsonBulderFactory factory;
     protected final CompletableFuture<Object> res;
@@ -27,6 +26,7 @@ public class JsonParser {
         this.factory = factory;
         res = new CompletableFuture<Object>();
         new RootTokenPort();
+        scanner.setTokenPort(this);
     }
 
     public CompletableFuture<Object> getResult() throws Exception {
@@ -35,13 +35,25 @@ public class JsonParser {
 
     protected void setCurrentParser(Parser tp) {
         currentParser=tp;
-        scanner.setTokenPort(tp);
     }
 
     public void postLine(String inp) {
         scanner.postLine(inp);
     }
 
+    @Override
+    public void postToken(int tokenType, String tokenString) {
+        try {
+            currentParser.postToken(tokenType, tokenString);
+        } catch (Exception e) {
+            currentParser.setParseError(e);
+        }
+    }
+
+    @Override
+    public void setParseError(Throwable e) {
+        currentParser.setParseError(e);
+    }
 
     /**
       * null, boolean, number, string, list, or map
@@ -65,7 +77,7 @@ public class JsonParser {
              parseIdent(tokenString);
              break;
          default:
-             currentParser.setParseError("value expected, but " + token2Str(tokenType) + " seen");
+             currentParser.postParseError("value expected, but " + token2Str(tokenType) + " seen");
          }
      }
 
@@ -80,7 +92,7 @@ public class JsonParser {
          } else if ("true".equals(tokenString)) {
              currentParser.setValue(Boolean.TRUE);
          } else {
-             currentParser.setParseError("invalid identifier");
+             currentParser.postParseError("invalid identifier");
          }
      }
 
@@ -92,14 +104,14 @@ public class JsonParser {
              try {
                  res = Double.valueOf(tokenString);
              } catch (NumberFormatException e1) {
-                 currentParser.setParseError("bad number:" + tokenString);
+                 currentParser.postParseError("bad number:" + tokenString);
                  return;
              }
          }
          currentParser.setValue(res);
      }
 
-     public abstract class Parser implements TokenPort {
+     public abstract class Parser extends TokenPort {
         final Parser parent;
 
         protected Parser(Parser parent) {
@@ -122,6 +134,11 @@ public class JsonParser {
             setCurrentParser(parent);
         }
 
+        @Override
+        public void setParseError(Throwable e) {
+            parent.setParseError(e);
+        }
+/*
         public void postParserError(String message) {
             setParseError(message);
         }
@@ -129,11 +146,7 @@ public class JsonParser {
         protected void setParseError(String message) {
             parent.setParseError(message);
         }
-
-        protected void setParseError(Throwable e) {
-            parent.setParseError(e);
-        }
-
+*/
         public abstract void setValue(Object value);
     }
 
@@ -151,22 +164,10 @@ public class JsonParser {
         	if (first) {
         		first=false;
                 firstToken(tokenType, tokenString);
-        	} else {
-        		if (tokenType!=EOF) {
-                    postParserError("EOF expected");
-            	} else {
-            		if ((resValue==null) && (resError==null)) {
-                        postParserError("unexpected EOF");
-                	}
-            		if (res.isDone()) {
-            			throw new RuntimeException();
-            		}
-                	if (resError!=null) {
-                        res.postFailure(resError);
-                	} else {
-                		res.post(resValue);
-                	}
-            	}
+        	} else if (tokenType!=EOF) {
+                postParseError("EOF expected");
+            } else if (!res.isDone()) {
+                postParseError("unexpected EOF");
         	}
         }
 
@@ -179,27 +180,24 @@ public class JsonParser {
 			    parseMap();
 			    break;
 			default:
-			    postParserError("{ or [ expected");
+			    postParseError("{ or [ expected");
 			}
 		}
 
         @Override
         public void setValue(Object value) {
-        	if (resValue==null) {
-        		resValue=value;
+        	if (!res.isDone()) {
+        	    res.post(value);
         	} else {
-        		setParseError("EOF expected");
+        	    postParseError("EOF expected");
         	}
         }
 
-        protected void setParseError(Throwable e) {
-        	if (resError==null) {
-        		resError=scanner.toParseException(e); // only first error matters
-        	}
-        }
-
-        protected void setParseError(String message) {
-        	setParseError(new ParseException(message));
+        @Override
+        public void setParseError(Throwable e) {
+            if (!res.isDone()) { // only first error matters TODO if it was value, not error
+                res.postFailure(scanner.toParseException(e));
+            }
         }
     }
 
@@ -211,6 +209,12 @@ public class JsonParser {
             this.builder = builder;
         }
 
+        @Override
+        public void setParseError(Throwable e) {
+            if (!res.isDone()) { // only first error matters
+                res.postFailure(scanner.toParseException(e));
+            }
+        }
         @Override
         public void postToken(int tokenType, String tokenString) {
             switch (tokenType) {
@@ -227,7 +231,7 @@ public class JsonParser {
         }
 
         @Override
-        public void postParserError(String message) {
+        public void postParseError(String message) {
             throw new RuntimeException(message);
         }
 
@@ -264,14 +268,14 @@ public class JsonParser {
                     state = 1;
                     break;
                 default:
-                    setParseError("Identifier, { or [ expected");
+                    postParseError("Identifier, { or [ expected");
                 }
                 break;
             case 1:
                 if (tokenType == COLON) {
                     state = 2;
                 } else {
-                    setParseError("':' expected");
+                    postParseError("':' expected");
                 }
                 break;
             case 2:
@@ -281,7 +285,7 @@ public class JsonParser {
         }
 
         @Override
-        public void postParserError(String message) {
+        public void postParseError(String message) {
             throw new RuntimeException(message);
         }
 
