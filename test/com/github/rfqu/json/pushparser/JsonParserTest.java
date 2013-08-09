@@ -18,6 +18,8 @@ public class JsonParserTest {
 
     @Test
     public void testN() throws Exception {
+        checkN("[] {}");
+
         checkN("a");
         checkN("null");
         checkN("1");

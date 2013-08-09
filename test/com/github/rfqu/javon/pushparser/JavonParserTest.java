@@ -87,4 +87,8 @@ public class JavonParserTest {
     protected void check(String inp) throws IOException, Exception {
         check(inp, inp);
     }
+    
+    public static void main(String[] args) throws Exception {
+        new JavonParserTest().testObj();
+    }
 }

@@ -43,7 +43,7 @@ public class JavonParser extends JsonParser {
             ObjectBuilder builder = factory.newObjectBuilder(tokenString);
             new ObjectParser(currentParser, builder);
         } catch (Exception e) {
-            currentParser.postParserError(e.getMessage());
+            currentParser.postParseError(e.getMessage());
         }
     }
 
@@ -77,7 +77,7 @@ public class JavonParser extends JsonParser {
                 parseMap();
                 break;
             default:
-                postParserError("Identifier, { or [ expected");
+                postParseError("Identifier, { or [ expected");
             }
 		}
     }
@@ -146,14 +146,14 @@ public class JavonParser extends JsonParser {
 					state = 4;
 					break;
 				default:
-					setParseError("comma  or ) expected");
+					postParseError("comma  or ) expected");
 				}
 				break;
 			case 4: // check ':'
 				if (tokenType == COLON) {
 					state = 5;
 				} else {
-					setParseError("':' expected");
+					postParseError("':' expected");
 				}
 				break;
 			case 5: // parse value in key-value pair
@@ -166,7 +166,7 @@ public class JavonParser extends JsonParser {
 						ListBuilder listBuilder = builder.asListBuilder();
 						new ListParser(this, listBuilder);
 					} catch (Exception e) {
-						setParseError(e);
+					    setParseError(e);
 					}
 					break;
 				case LBRACE:
@@ -174,7 +174,7 @@ public class JavonParser extends JsonParser {
 						MapBuilder mapBuilder = builder.asMapBuilder();
 						new MapParser(this, mapBuilder);
 					} catch (ParseException e) {
-						setParseError(e);
+					    setParseError(e);
 					}
 					break;
 				default:
@@ -202,7 +202,7 @@ public class JavonParser extends JsonParser {
                 case 6: // when processing list and map tails, ListParser or MapParser returns
                     break;
                 default:
-                    setParseError("internal error: call to setValue when state="+state);
+                    postParseError("internal error: call to setValue when state="+state);
                 }
             } catch (Exception e) {
                 setParseError(e);

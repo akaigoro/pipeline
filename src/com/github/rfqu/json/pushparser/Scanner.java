@@ -11,7 +11,7 @@ package com.github.rfqu.json.pushparser;
 
 import com.github.rfqu.json.parser.ParseException;
 
-public class Scanner implements LinePort {
+public class Scanner {
     public static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
@@ -34,22 +34,17 @@ public class Scanner implements LinePort {
         }
     }
 
-    private String line;
-    private int lineNumber=0;
-    private int pos=0;
+    private CharRingBuffer charBuffer=new CharRingBuffer();
+    private boolean newLineSeen=false;
     
-    private String tokenLine;
-    private int tokenLineNumber;
-    private int tokenPos;
+    private GeneralScanner generalScanner=new GeneralScanner();
+    private StringScanner stringScanner=new StringScanner();
+    private NumScanner numScanner=new NumScanner();
+    private IdentScanner identScanner=new IdentScanner();
+    private CharPort chp=generalScanner;
+    private TokenPort tokenPort;
     
-    GeneralScanner generalScanner=new GeneralScanner();
-    StringScanner stringScanner=new StringScanner();
-    NumScanner numScanner=new NumScanner();
-    IdentScanner identScanner=new IdentScanner();
-    CharPort chp=generalScanner;
-    TokenPort tokenPort;
-    
-    StringBuilder tokenStrinBuilder=new StringBuilder();
+    private StringBuilder tokenStrinBuilder=new StringBuilder();
     
     void setScanner(CharPort p) {
         chp=p;
@@ -59,55 +54,59 @@ public class Scanner implements LinePort {
         tokenPort=tp;
     }
 
-    @Override
+    public void postCharSource(CharSource source) {
+        int ch;
+        for (;;) {
+            if (newLineSeen) {
+                newLineSeen=false;
+                charBuffer.startLine();
+            }
+            switch (ch=source.nextChar()) {
+                case -1:
+                    return;
+                case NEWL:
+                    // if this chracter will cause error,
+                    // diagnostics should include current line
+                    // so postpone sitching to another line for next character
+                    newLineSeen=true;
+                    chp.postChar((char) ch);
+                    break;
+                default:
+                    charBuffer.putChar((char) ch);
+                    chp.postChar((char) ch);
+            }
+        }
+    } 
+    
     public void postLine(String str) {
         if (str==null) {
             tokenPort.postToken(EOF, null);
             return;
         }
-        line = str;
-        lineNumber++;
-        int length = line.length();
-        for (pos=0; pos<length; pos++) {
-            char ch = line.charAt(pos);
-            chp.postChar(ch);
-        }
-        chp.postChar((char) NEWL);
+        postCharSource(new StringSource(str));
     } 
-    
+
     protected ParseException toParseException(Throwable e) {
-        StringBuilder sb=new StringBuilder("\n");
+        String header;
         if (e instanceof ParseException) {
-            sb.append("Syntax error");
+            header="Syntax error";
         } else {
-            sb.append(e.getClass().getName());
+            header=e.getClass().getName();
         }
-        sb.append(" at line ").append(tokenLineNumber).append(":\n")
-          .append(tokenLine).append("\n");
-        for (int k=0; k<tokenPos; k++) {
-            sb.append(' ');
-        }
-        sb.append("^ ").append(e.getMessage());
-        String message = sb.toString();
+        String message = charBuffer.getTokenLine(header, e.getMessage());
         StackTraceElement[] stackTrace = e.getStackTrace();
         ParseException ee = new ParseException(message, e);
         ee.setStackTrace(stackTrace);
         return ee;
     }
 
-    void postToken(int tokenType) {
+    private void postToken(int tokenType) {
         String str=tokenStrinBuilder.toString();
         tokenPort.postToken(tokenType, str);
         tokenStrinBuilder.delete(0, str.length());
         setScanner(generalScanner);
     }
     
-    private void markTokenPosition() {
-        tokenLineNumber=lineNumber;
-        tokenLine=line;
-        tokenPos=pos;
-    }
-
     /** parses quoted literal
      * 
      * @param quoteSymbol
@@ -117,7 +116,7 @@ public class Scanner implements LinePort {
         
         void scanString(int quoteSymbol) {
             this.quoteSymbol=quoteSymbol;
-            markTokenPosition();
+            charBuffer.markTokenPosition();
             setScanner(this);
             
         }
@@ -127,7 +126,7 @@ public class Scanner implements LinePort {
             if (cch==quoteSymbol) {
                 postToken(STRING);
             } else if (cch==EOF) {
-                tokenPort.postParserError("unexpected end of file");
+                tokenPort.postParseError("unexpected end of file");
             } else {
                 tokenStrinBuilder.append(cch);
             }
@@ -142,7 +141,7 @@ public class Scanner implements LinePort {
     private final class IdentScanner implements CharPort {
         
         void scanIdent(char cch) {
-            markTokenPosition();
+            charBuffer.markTokenPosition();
             setScanner(this);
             tokenStrinBuilder.append(cch);            
         }
@@ -165,7 +164,7 @@ public class Scanner implements LinePort {
     private final class NumScanner implements CharPort {
         
         void scanNumber(char cch) {
-            markTokenPosition();
+            charBuffer.markTokenPosition();
             tokenStrinBuilder.append(cch);
             setScanner(this);
         }
@@ -199,7 +198,7 @@ public class Scanner implements LinePort {
             case LPAREN: case RPAREN:
             case LBRACE: case RBRACE: case LBRACKET:
             case RBRACKET: case COMMA: case COLON:
-                markTokenPosition();
+                charBuffer.markTokenPosition();
                 tokenPort.postToken(cch, null);
                 return;
             case SPACE: case TAB:   case NEWL:
@@ -216,8 +215,8 @@ public class Scanner implements LinePort {
                     identScanner.scanIdent(cch);
                     return;
                 } else {
-                    markTokenPosition();
-                    tokenPort.postParserError("unexpected character:'"+cch+"'");
+                    charBuffer.markTokenPosition();
+                    tokenPort.postParseError("unexpected character:'"+cch+"'");
                 }
             } // end switch
         }

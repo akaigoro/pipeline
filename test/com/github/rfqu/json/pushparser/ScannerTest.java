@@ -51,7 +51,7 @@ public class ScannerTest {
         check(inp, inp, tokens);
     }
 
-    class MyTokenPort implements TokenPort {
+    class MyTokenPort extends TokenPort {
         StringBuilder sb=new StringBuilder();
         ArrayList<Integer> types=new ArrayList<Integer>(); 
 
@@ -67,8 +67,8 @@ public class ScannerTest {
         }
 
         @Override
-        public void postParserError(String message) {
-            throw new RuntimeException(message);
+        public void setParseError(Throwable e) {
+            throw new RuntimeException(e);
         }
         
         String getString() {

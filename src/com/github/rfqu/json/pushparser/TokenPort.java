@@ -1,6 +1,6 @@
 /*
  * Copyright 2013 by Alexei Kaigorodov
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this filbstracte except in compliance with
  * the License. You may obtain a copy of the License at
  *     http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
@@ -10,10 +10,15 @@
 
 package com.github.rfqu.json.pushparser;
 
+import com.github.rfqu.json.parser.ParseException;
+
 /**
  * output port for characters
  */
-public interface TokenPort {
-    void postToken(int tokenType, String tokenString);
-    void postParserError(String message);
+public abstract class TokenPort {
+    public abstract void postToken(int tokenType, String tokenString);
+    public void postParseError(String message) {
+        setParseError(new ParseException(message));
+    }
+    public abstract void setParseError(Throwable e);
 }
