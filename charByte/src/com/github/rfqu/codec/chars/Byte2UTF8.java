@@ -29,7 +29,7 @@ public class Byte2UTF8 implements BytePort {
          *  2 — 110
          *  3 — 1110
          */
-        public void postByte(int b) {
+        public void postByte(byte b) {
             int n=zeroPos(b);
             if (n==1) {
                 // 1 byte
@@ -40,13 +40,18 @@ public class Byte2UTF8 implements BytePort {
                 decoder=continuationByteDecoder;
             }
         }
-        
+
+        @Override
+        public void postEOF() {
+            // TODO Auto-generated method stub
+            
+        }        
     };
     
     BytePort continuationByteDecoder=new BytePort(){
 
         @Override
-        public void postByte(int b) {
+        public void postByte(byte b) {
             data = (data<<6) | (b&0x3F);
             if (num > 1) {
                 num--;
@@ -55,12 +60,18 @@ public class Byte2UTF8 implements BytePort {
                 decoder=leadingByteDecoder;
             }
         }
+
+        @Override
+        public void postEOF() {
+            // TODO Auto-generated method stub
+            
+        }        
     };
     
     BytePort decoder=leadingByteDecoder;
 
     @Override
-    public void postByte(int b) {
+    public void postByte(byte b) {
         decoder.postByte(b);
     }
     
@@ -76,5 +87,11 @@ public class Byte2UTF8 implements BytePort {
             }
         }
         return 7;
+    }
+
+    @Override
+    public void postEOF() {
+        // TODO Auto-generated method stub
+        
     }
 }

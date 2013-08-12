@@ -12,6 +12,7 @@ package com.github.rfqu.df4j.codec.chars;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,11 +23,7 @@ import com.github.rfqu.codec.chars.Byte2UTF8;
 public class Byte2UTF8Test {
 
     void test(String s) throws IOException {
-        ByteArrayOutputStream outs=new ByteArrayOutputStream();
-        OutputStreamWriter out=new OutputStreamWriter(outs, "UTF8");
-        out.write(s);
-        out.close();
-        byte[] bytes=outs.toByteArray();
+        byte[] bytes = string2Bytes(s);
         CharPort chp=new CharCollector();
         Byte2UTF8 decoder=new Byte2UTF8(chp);
         for (int k=0; k<bytes.length; k++) {
@@ -35,9 +32,23 @@ public class Byte2UTF8Test {
         String res=chp.toString();
         Assert.assertEquals(s, res);
     }
+
+    protected byte[] string2Bytes(String s) throws UnsupportedEncodingException, IOException {
+        ByteArrayOutputStream outs=new ByteArrayOutputStream();
+        OutputStreamWriter out=new OutputStreamWriter(outs, "UTF8");
+        out.write(s);
+        out.close();
+        byte[] bytes=outs.toByteArray();
+        return bytes;
+    }
     
     @Test
-    public void testACII() throws IOException {
+    public void testACII1() throws IOException {
+        test("a");
+    }
+    
+    @Test
+    public void testACII2() throws IOException {
         test("ascii");
     }
     
@@ -62,6 +73,12 @@ public class Byte2UTF8Test {
         @Override
         public String toString() {
             return sb.toString();
+        }
+
+        @Override
+        public void postEOF() {
+            // TODO Auto-generated method stub
+            
         }
         
     }

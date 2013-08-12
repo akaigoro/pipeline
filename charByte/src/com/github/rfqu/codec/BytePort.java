@@ -13,8 +13,6 @@ package com.github.rfqu.codec;
 /**
  * output port for bytes
  */
-public interface BytePort {
-
-	public void postByte(int b);
-	
+public interface BytePort extends EOFPort {
+    public boolean postByte(byte b);
 }

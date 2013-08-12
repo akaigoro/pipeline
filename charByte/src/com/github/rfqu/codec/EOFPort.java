@@ -11,8 +11,8 @@
 package com.github.rfqu.codec;
 
 /**
- * output port for characters
+ * output port for bytes
  */
-public interface CharPort extends EOFPort {
-	public void postChar(char ch);
+public interface EOFPort {
+    public void postEOF();	
 }
