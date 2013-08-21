@@ -5,16 +5,24 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.codec.json.builder.impl.JsonPrinter;
 import com.github.rfqu.codec.json.parser.ParseException;
 import com.github.rfqu.codec.json.pushparser.JsonParser;
 import com.github.rfqu.df4j.core.CompletableFuture;
+import com.github.rfqu.df4j.core.DFContext;
+import com.github.rfqu.df4j.ext.ImmediateExecutor;
+import com.github.rfqu.df4j.pipeline.util.StringChunkSource;
 
 //import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
 
 public class JsonParserTest {
+    @BeforeClass
+    public static void init() {
+        DFContext.setCurrentExecutor(new ImmediateExecutor());
+    }
 
     @Test
     public void testN() throws Exception {
@@ -47,9 +55,10 @@ public class JsonParserTest {
     protected void check(String inp, String exp) throws IOException, Exception {
         JsonPrinter pr = new JsonPrinter();
         JsonParser tp = new JsonParser(pr);
+        StringChunkSource source = new StringChunkSource(tp);
         CompletableFuture<Object> res = tp.getResult();
-        tp.postLine(inp);
-        tp.postLine(null);
+        source.post(inp);
+        source.close();
         assertTrue(res.isDone());
         String resS = res.get().toString();
         assertEquals(exp, resS);
@@ -62,9 +71,10 @@ public class JsonParserTest {
     protected void checkN(String inp) throws IOException, Exception {
         JsonPrinter pr = new JsonPrinter();
         JsonParser tp = new JsonParser(pr);
+        StringChunkSource source = new StringChunkSource(tp);
         CompletableFuture<Object> res = tp.getResult();
-        tp.postLine(inp);
-        tp.postLine(null);
+        source.post(inp);
+        source.close();
         assertTrue(res.isDone());
         try {
 			res.get();

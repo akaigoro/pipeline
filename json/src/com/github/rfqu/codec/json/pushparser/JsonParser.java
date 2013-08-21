@@ -9,24 +9,32 @@
  */
 package com.github.rfqu.codec.json.pushparser;
 
+import static com.github.rfqu.codec.json.pushparser.Scanner.*;
+
+import java.nio.CharBuffer;
+
 import com.github.rfqu.codec.json.builder.JsonBulderFactory;
 import com.github.rfqu.codec.json.builder.ListBuilder;
 import com.github.rfqu.codec.json.builder.MapBuilder;
+import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.CompletableFuture;
+import com.github.rfqu.df4j.pipeline.ActorBolt;
+import com.github.rfqu.df4j.pipeline.BufChunk;
 
-import static com.github.rfqu.codec.json.pushparser.Scanner.*;
-
-public class JsonParser extends TokenPort {
-    protected Scanner scanner=new Scanner();
+public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
+    public final ActorBolt<CharBuffer>.InpCharIterator inp;
+    protected Scanner scanner;
     protected final JsonBulderFactory factory;
     protected final CompletableFuture<Object> res;
     protected Parser currentParser;
+    protected TokenPort tokenPort=new MyTokenPort();
 
     public JsonParser(JsonBulderFactory factory) {
         this.factory = factory;
         res = new CompletableFuture<Object>();
         new RootTokenPort();
-        scanner.setTokenPort(this);
+        scanner=new Scanner(tokenPort);
+        inp=scanner.inp;
     }
 
     public CompletableFuture<Object> getResult() throws Exception {
@@ -35,24 +43,6 @@ public class JsonParser extends TokenPort {
 
     protected void setCurrentParser(Parser tp) {
         currentParser=tp;
-    }
-
-    public void postLine(String inp) {
-        scanner.postLine(inp);
-    }
-
-    @Override
-    public void postToken(int tokenType, String tokenString) {
-        try {
-            currentParser.postToken(tokenType, tokenString);
-        } catch (Exception e) {
-            currentParser.setParseError(e);
-        }
-    }
-
-    @Override
-    public void setParseError(Throwable e) {
-        currentParser.setParseError(e);
     }
 
     /**
@@ -111,6 +101,24 @@ public class JsonParser extends TokenPort {
          currentParser.setValue(res);
      }
 
+     class MyTokenPort extends TokenPort {
+         
+         @Override
+         public void postToken(char tokenType, String tokenString) {
+             try {
+                 currentParser.postToken(tokenType, tokenString);
+             } catch (Exception e) {
+                 currentParser.setParseError(e);
+             }
+         }
+
+         @Override
+         public void setParseError(Throwable e) {
+             currentParser.setParseError(e);
+         }
+
+    }
+     
      public abstract class Parser extends TokenPort {
         final Parser parent;
 
@@ -160,7 +168,7 @@ public class JsonParser extends TokenPort {
         }
 
         @Override
-        public void postToken(int tokenType, String tokenString) {
+        public void postToken(char tokenType, String tokenString) {
         	if (first) {
         		first=false;
                 firstToken(tokenType, tokenString);
@@ -216,7 +224,7 @@ public class JsonParser extends TokenPort {
             }
         }
         @Override
-        public void postToken(int tokenType, String tokenString) {
+        public void postToken(char tokenType, String tokenString) {
             switch (tokenType) {
             case COMMA:
                 return;
@@ -252,7 +260,7 @@ public class JsonParser extends TokenPort {
         }
 
         @Override
-        public void postToken(int tokenType, String tokenString) {
+        public void postToken(char tokenType, String tokenString) {
             switch (state) {
             case 0:
                 switch (tokenType) {
@@ -293,5 +301,26 @@ public class JsonParser extends TokenPort {
         public void setValue(Object value) {
             builder.set(key, value);
         }
+    }
+
+    @Override
+    public void close() {
+        scanner.close();
+    }
+
+    @Override
+    public boolean isClosed() {
+        // TODO Auto-generated method stub
+        return scanner.isClosed();
+    }
+
+    @Override
+    public void post(BufChunk<CharBuffer> m) {
+        scanner.post(m);
+    }
+
+    @Override
+    public void postFailure(Throwable exc) {
+        scanner.postFailure(exc);
     }
 }

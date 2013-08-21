@@ -16,9 +16,11 @@ import com.github.rfqu.codec.json.parser.ParseException;
  * output port for characters
  */
 public abstract class TokenPort {
-    public abstract void postToken(int tokenType, String tokenString);
+    public abstract void postToken(char tokenType, String tokenString);
+    
     public void postParseError(String message) {
         setParseError(new ParseException(message));
     }
+    
     public abstract void setParseError(Throwable e);
 }

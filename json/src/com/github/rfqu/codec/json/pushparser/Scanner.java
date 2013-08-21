@@ -9,13 +9,16 @@
  */
 package com.github.rfqu.codec.json.pushparser;
 
-import com.github.rfqu.codec.json.parser.ParseException;
+import java.nio.CharBuffer;
 
-public class Scanner {
-    public static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
+import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.df4j.pipeline.ActorBolt;
+
+public class Scanner extends ActorBolt<CharBuffer> {
+    public static final char LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
-            , EOF=Character.MAX_VALUE
+            , EOF=0
             , NUMBER=EOF+1, IDENT=NUMBER+1, STRING=IDENT+1;
     
     protected static String token2Str(int t) {
@@ -34,6 +37,7 @@ public class Scanner {
         }
     }
 
+    final InpCharIterator inp=new InpCharIterator();
     private CharRingBuffer charBuffer=new CharRingBuffer();
     private boolean newLineSeen=false;
     
@@ -41,27 +45,33 @@ public class Scanner {
     private StringScanner stringScanner=new StringScanner();
     private NumScanner numScanner=new NumScanner();
     private IdentScanner identScanner=new IdentScanner();
-    private CharPort chp=generalScanner;
+    private SubScanner subScanner=generalScanner;
     private TokenPort tokenPort;
     
-    private StringBuilder tokenStrinBuilder=new StringBuilder();
-    
-    void setScanner(CharPort p) {
-        chp=p;
-    }
-    
-    public void setTokenPort(TokenPort tp) {
-        tokenPort=tp;
+    public Scanner() {
     }
 
-    public void postCharSource(CharSource source) {
+    public Scanner(TokenPort tokenPort) {
+        this.tokenPort = tokenPort;
+    }
+
+    @Override
+    protected void transform() {
         int ch;
         for (;;) {
+            if (inp.isClosed()) {
+                subScanner.postChar(EOF);
+                return;
+            }
+//            CharBuffer chars=inp.getCurrentBuffer();
+            ch=inp.currentChar();
+/*
             if (newLineSeen) {
                 newLineSeen=false;
                 charBuffer.startLine();
             }
-            switch (ch=source.nextChar()) {
+            */
+            switch (ch) {
                 case -1:
                     return;
                 case NEWL:
@@ -69,22 +79,21 @@ public class Scanner {
                     // diagnostics should include current line
                     // so postpone sitching to another line for next character
                     newLineSeen=true;
-                    chp.postChar((char) ch);
+                    subScanner.postChar((char) ch);
                     break;
                 default:
                     charBuffer.putChar((char) ch);
-                    chp.postChar((char) ch);
+                    subScanner.postChar((char) ch);
+            }
+            if (!inp.moveNextChar()) {
+                return;
             }
         }
-    } 
-    
-    public void postLine(String str) {
-        if (str==null) {
-            tokenPort.postToken(EOF, null);
-            return;
-        }
-        postCharSource(new StringSource(str));
-    } 
+    }
+
+    public void setTokenPort(TokenPort tp) {
+        tokenPort=tp;
+    }
 
     protected ParseException toParseException(Throwable e) {
         String header;
@@ -99,101 +108,39 @@ public class Scanner {
         ee.setStackTrace(stackTrace);
         return ee;
     }
-
-    private void postToken(int tokenType) {
-        String str=tokenStrinBuilder.toString();
-        tokenPort.postToken(tokenType, str);
-        tokenStrinBuilder.delete(0, str.length());
-        setScanner(generalScanner);
-    }
     
-    /** parses quoted literal
-     * 
-     * @param quoteSymbol
-     */
-    private final class StringScanner implements CharPort {
-        int quoteSymbol;
-        
-        void scanString(int quoteSymbol) {
-            this.quoteSymbol=quoteSymbol;
-            charBuffer.markTokenPosition();
-            setScanner(this);
-            
+    abstract class SubScanner {
+        private StringBuilder sb=new StringBuilder();
+
+        /**
+         * posts token with string
+         * @param tokenType
+         */
+        final void postToken(char tokenType) {
+            String str=sb.toString();
+            tokenPort.postToken(tokenType, str);
+            sb.delete(0, str.length());
+            subScanner=generalScanner;
         }
 
-        @Override
-        public void postChar(char cch) {
-            if (cch==quoteSymbol) {
-                postToken(STRING);
-            } else if (cch==EOF) {
-                tokenPort.postParseError("unexpected end of file");
-            } else {
-                tokenStrinBuilder.append(cch);
-            }
+        final void append(char ch) {
+            sb.append(ch);
+        }
+       
+        final void setMeAsScanner() {
+            subScanner=this;
         }
         
-    }
+        abstract void postChar(char ch);
+   }
     
-    /** parses unquoted identifier
-     * 
-     * @param quoteSymbol
-     */
-    private final class IdentScanner implements CharPort {
-        
-        void scanIdent(char cch) {
-            charBuffer.markTokenPosition();
-            setScanner(this);
-            tokenStrinBuilder.append(cch);            
-        }
-
-        @Override
-        public void postChar(char cch) {
-            if (Character.isDigit(cch) || Character.isLetter(cch)) {
-                tokenStrinBuilder.append(cch);
-            } else {
-                postToken(IDENT);
-                chp.postChar(cch);
-            }
-        }
-    }
-    
-    /** parses number
-     * 
-     * @param quoteSymbol
-     */
-    private final class NumScanner implements CharPort {
-        
-        void scanNumber(char cch) {
-            charBuffer.markTokenPosition();
-            tokenStrinBuilder.append(cch);
-            setScanner(this);
-        }
-
-        @Override
-        public void postChar(char cch) {
-            switch (cch) {
-            case EOF:
-            case LPAREN: case RPAREN:
-            case LBRACE: case RBRACE: case LBRACKET:
-            case RBRACKET: case COMMA: case COLON:
-            case SPACE: case TAB:   case NEWL:
-            case COMMENT:
-                postToken(NUMBER);
-                chp.postChar(cch);
-                break;
-            default:
-                tokenStrinBuilder.append(cch);
-            }
-        }   
-    }
-    
-    private final class GeneralScanner implements CharPort {
+    private final class GeneralScanner extends SubScanner {
 
         /**
          * determines current lexical token
          */
         @Override
-        public void postChar(char cch) {
+        void postChar(char cch) {
             switch (cch) {
             case LPAREN: case RPAREN:
             case LBRACE: case RBRACE: case LBRACKET:
@@ -220,5 +167,85 @@ public class Scanner {
                 }
             } // end switch
         }
+    }
+    
+    /** parses quoted literal
+     * 
+     * @param quoteSymbol
+     */
+    private final class StringScanner extends SubScanner {
+        int quoteSymbol;
+        
+        void scanString(int quoteSymbol) {
+            this.quoteSymbol=quoteSymbol;
+            charBuffer.markTokenPosition();
+            setMeAsScanner();
+            
+        }
+
+        @Override
+        void postChar(char cch) {
+            if (cch==quoteSymbol) {
+                postToken(STRING);
+            } else if (cch==EOF) {
+                tokenPort.postParseError("unexpected end of file");
+            } else {
+                append(cch);
+            }
+        }
+        
+    }
+    
+    /** parses unquoted identifier
+     * 
+     * @param quoteSymbol
+     */
+    private final class IdentScanner extends SubScanner {
+        
+        void scanIdent(char cch) {
+            charBuffer.markTokenPosition();
+            setMeAsScanner();
+            append(cch);            
+        }
+
+        @Override
+        void postChar(char cch) {
+            if (Character.isDigit(cch) || Character.isLetter(cch)) {
+                append(cch);
+            } else {
+                postToken(IDENT);
+                subScanner.postChar(cch);
+            }
+        }
+    }
+    
+    /** parses number
+     * 
+     * @param quoteSymbol
+     */
+    private final class NumScanner extends SubScanner {
+        
+        void scanNumber(char cch) {
+            charBuffer.markTokenPosition();
+            append(cch);
+            setMeAsScanner();
+        }
+
+        @Override
+        void postChar(char cch) {
+            switch (cch) {
+//            case EOF:
+            case LPAREN: case RPAREN:
+            case LBRACE: case RBRACE: case LBRACKET:
+            case RBRACKET: case COMMA: case COLON:
+            case SPACE: case TAB:   case NEWL:
+            case COMMENT:
+                postToken(NUMBER);
+                subScanner.postChar(cch);
+                break;
+            default:
+                append(cch);
+            }
+        }   
     }
 }

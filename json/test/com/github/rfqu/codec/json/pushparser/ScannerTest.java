@@ -5,14 +5,22 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.codec.json.pushparser.Scanner;
 import com.github.rfqu.codec.json.pushparser.TokenPort;
+import com.github.rfqu.df4j.core.DFContext;
+import com.github.rfqu.df4j.ext.ImmediateExecutor;
+import com.github.rfqu.df4j.pipeline.util.StringChunkSource;
 
 import static com.github.rfqu.codec.json.pushparser.Scanner.*;
 
 public class ScannerTest {
+    @BeforeClass
+    public static void init() {
+        DFContext.setCurrentExecutor(new ImmediateExecutor());
+    }
 
     @Test
     public void testList() throws Exception {
@@ -33,12 +41,12 @@ public class ScannerTest {
                 STRING,COLON,NUMBER, STRING,COLON,NUMBER, STRING,COLON,STRING, COMMA, RBRACE);
     }
 
-    protected void check(String inp, String exp, Integer... tokens) {
-        Scanner sc=new Scanner();
+    protected void check(String inp, String exp, Character... tokens) {
         MyTokenPort tp = new MyTokenPort();
-        sc.setTokenPort(tp);
-        sc.postLine(inp);
-        Integer[] resT = tp.getTypes();
+        Scanner sc=new Scanner(tp);
+        StringChunkSource source = new StringChunkSource(sc);
+        source.post(inp);
+        Character[] resT = tp.getTypes();
         assertEquals(tokens.length, resT.length);
         for (int k=0; k<tokens.length; k++) {
             assertEquals(tokens[k], resT[k]);
@@ -47,16 +55,16 @@ public class ScannerTest {
         assertEquals(exp, resS);
     }
 
-    protected void check(String inp, Integer... tokens) throws IOException, Exception {
+    protected void check(String inp, Character... tokens) throws IOException, Exception {
         check(inp, inp, tokens);
     }
 
     class MyTokenPort extends TokenPort {
         StringBuilder sb=new StringBuilder();
-        ArrayList<Integer> types=new ArrayList<Integer>(); 
+        ArrayList<Character> types=new ArrayList<Character>(); 
 
         @Override
-        public void postToken(int tokenType, String tokenString) {
+        public void postToken(char tokenType, String tokenString) {
             if (tokenType==NEWL) return;
             types.add(tokenType);
             if (tokenString==null) {
@@ -75,8 +83,8 @@ public class ScannerTest {
             return sb.toString();
         }
 
-        Integer[] getTypes() {
-            return types.toArray(new Integer[types.size()]);
+        Character[] getTypes() {
+            return types.toArray(new Character[types.size()]);
         }
     }
 }

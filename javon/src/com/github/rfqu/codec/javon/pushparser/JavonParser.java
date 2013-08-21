@@ -34,10 +34,6 @@ public class JavonParser extends JsonParser {
         scanner.setTokenPort(tp);
     }
 
-    public void postLine(String inp) {
-        scanner.postLine(inp);
-    }
-
     protected void parseObject(String tokenString) {
         try {
             ObjectBuilder builder = factory.newObjectBuilder(tokenString);
