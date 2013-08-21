@@ -7,8 +7,8 @@ import java.util.concurrent.TimeoutException;
 import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.ActorVariable;
 import com.github.rfqu.df4j.core.Port;
-import com.github.rfqu.df4j.pipeline.ByteBufChunk;
-import com.github.rfqu.df4j.pipeline.Chunk;
+import com.github.rfqu.pipeline.core.ByteBufChunk;
+import com.github.rfqu.pipeline.core.Chunk;
 
 public class AsyncBufChunkSource {
     protected final AsyncSocketChannel asch;

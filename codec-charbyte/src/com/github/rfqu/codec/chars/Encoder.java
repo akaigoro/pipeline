@@ -7,8 +7,8 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 
 import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.df4j.pipeline.BufChunk;
-import com.github.rfqu.df4j.pipeline.ActorBolt;
+import com.github.rfqu.pipeline.core.ActorBolt;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 /** 
  * Converts chars in CharBuffers to bytes in ByteBuffers

@@ -8,9 +8,7 @@ import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.ActorVariable;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.DataflowVariable.Input;
-import com.github.rfqu.df4j.pipeline.BufChunk;
-import com.github.rfqu.df4j.pipeline.ByteBufChunk;
-import com.github.rfqu.df4j.pipeline.Chunk;
+import com.github.rfqu.pipeline.core.ByteBufChunk;
 import com.github.rfqu.pipeline.nio.AsyncBufChunkSource.ChunkQueue;
 import com.github.rfqu.pipeline.nio.AsyncBufChunkSource.RequestHandler;
 

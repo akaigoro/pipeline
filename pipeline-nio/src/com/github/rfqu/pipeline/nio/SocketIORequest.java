@@ -14,7 +14,7 @@ package com.github.rfqu.pipeline.nio;
 import java.nio.ByteBuffer;
 
 import com.github.rfqu.df4j.core.Port;
-import com.github.rfqu.df4j.pipeline.ByteBufChunk;
+import com.github.rfqu.pipeline.core.ByteBufChunk;
 
 /**
  * Request for a socket I/O operation.

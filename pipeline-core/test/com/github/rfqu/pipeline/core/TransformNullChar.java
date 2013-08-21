@@ -1,10 +1,10 @@
-package com.github.rfqu.df4j.pipeline;
+package com.github.rfqu.pipeline.core;
 
 import java.nio.CharBuffer;
 
 import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.df4j.pipeline.BufChunk;
-import com.github.rfqu.df4j.pipeline.ActorBolt;
+import com.github.rfqu.pipeline.core.ActorBolt;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 class TransformNullChar extends ActorBolt<CharBuffer, BufChunk<CharBuffer>> {
     int buffLen;

@@ -1,4 +1,4 @@
-package com.github.rfqu.df4j.pipeline.util;
+package com.github.rfqu.pipeline.util;
 
 import static org.junit.Assert.*;
 

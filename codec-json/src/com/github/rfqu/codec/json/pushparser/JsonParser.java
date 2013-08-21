@@ -18,11 +18,11 @@ import com.github.rfqu.codec.json.builder.ListBuilder;
 import com.github.rfqu.codec.json.builder.MapBuilder;
 import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.df4j.pipeline.ActorBolt;
-import com.github.rfqu.df4j.pipeline.BufChunk;
+import com.github.rfqu.pipeline.core.ActorBolt;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
-    public final ActorBolt<CharBuffer>.InpCharIterator inp;
+    public final ActorBolt<CharBuffer, Void>.InpCharIterator inp;
     protected Scanner scanner;
     protected final JsonBulderFactory factory;
     protected final CompletableFuture<Object> res;

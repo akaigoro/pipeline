@@ -25,7 +25,7 @@ public abstract class LimitedServerTest {
 //    static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 9990);
     static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 8007);
 
-    AsyncChannelFactory channelFactory;
+    protected AsyncChannelFactory channelFactory;
  
     @Before
     public void init() {

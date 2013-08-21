@@ -12,7 +12,7 @@ import com.github.rfqu.codec.json.pushparser.Scanner;
 import com.github.rfqu.codec.json.pushparser.TokenPort;
 import com.github.rfqu.df4j.core.DFContext;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.df4j.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.util.StringChunkSource;
 
 import static com.github.rfqu.codec.json.pushparser.Scanner.*;
 

@@ -1,9 +1,9 @@
-package com.github.rfqu.df4j.pipeline.util;
+package com.github.rfqu.pipeline.util;
 
 import java.nio.ByteBuffer;
 
 import com.github.rfqu.df4j.core.StreamPort;
-import com.github.rfqu.df4j.pipeline.BufChunk;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 public class ByteChunkSource implements StreamPort<byte[]> {
 	private StreamPort<BufChunk<ByteBuffer>> demand;

@@ -1,4 +1,4 @@
-package com.github.rfqu.df4j.pipeline.util;
+package com.github.rfqu.pipeline.util;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutionException;
 
 import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.df4j.pipeline.BufChunk;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 public class ByteChunkSink implements ActorPort<BufChunk<ByteBuffer>> {
 	ByteArrayOutputStream bac=new ByteArrayOutputStream();

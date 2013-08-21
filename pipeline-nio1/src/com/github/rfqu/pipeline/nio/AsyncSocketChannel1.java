@@ -38,7 +38,7 @@ import com.github.rfqu.pipeline.nio.SelectorThread.SelectorListener;
  * After request is served, it is sent to the port denoted by <code>replyTo</code> parameter in
  * the read/write methods.
  */
-public class AsyncSocketChannel1  implements SelectorListenerUser {
+public class AsyncSocketChannel1 extends AsyncSocketChannel implements SelectorListenerUser {
     protected volatile SocketChannel socketChannel;
     protected final ConnectionCompleter connectionCompleter;
     protected final ConnectionFuture connEvent=new ConnectionFuture();

@@ -1,9 +1,9 @@
-package com.github.rfqu.df4j.pipeline.util;
+package com.github.rfqu.pipeline.util;
 
 import java.nio.CharBuffer;
 
 import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.df4j.pipeline.BufChunk;
+import com.github.rfqu.pipeline.core.BufChunk;
 
 public class StringChunkSource implements ActorPort<String> {
 	private ActorPort<BufChunk<CharBuffer>> outPort;

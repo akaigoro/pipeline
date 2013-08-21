@@ -18,7 +18,7 @@ import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
-import com.github.rfqu.df4j.pipeline.ByteBufChunk;
+import com.github.rfqu.pipeline.core.ByteBufChunk;
 
 /**
  * Wrapper over {@link AsynchronousSocketChannel}.

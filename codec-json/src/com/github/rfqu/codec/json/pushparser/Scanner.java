@@ -12,9 +12,10 @@ package com.github.rfqu.codec.json.pushparser;
 import java.nio.CharBuffer;
 
 import com.github.rfqu.codec.json.parser.ParseException;
-import com.github.rfqu.df4j.pipeline.ActorBolt;
+import com.github.rfqu.df4j.core.ActorPort;
+import com.github.rfqu.pipeline.core.ActorBolt;
 
-public class Scanner extends ActorBolt<CharBuffer> {
+public class Scanner extends ActorBolt<CharBuffer, Void> {
     public static final char LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
@@ -248,4 +249,10 @@ public class Scanner extends ActorBolt<CharBuffer> {
             }
         }   
     }
+
+	@Override
+	public void setListener(ActorPort<Void> listener) {
+		// TODO Auto-generated method stub
+		
+	}
 }

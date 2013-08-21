@@ -1,4 +1,4 @@
-package com.github.rfqu.df4j.pipeline;
+package com.github.rfqu.pipeline.core;
 
 import static org.junit.Assert.*;
 
@@ -9,8 +9,8 @@ import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.df4j.pipeline.util.CharChunkSink;
-import com.github.rfqu.df4j.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.util.CharChunkSink;
+import com.github.rfqu.pipeline.util.StringChunkSource;
 
 public class TransformTest {
 	final static String string1 = "1";

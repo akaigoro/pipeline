@@ -90,7 +90,7 @@ public class JavonParser extends JsonParser {
         }
 
         @Override
-		public void postToken(int tokenType, String tokenString) {
+		public void postToken(char tokenType, String tokenString) {
 			switch (state) {
 			case 0: // just after class name
 				switch (tokenType) {
