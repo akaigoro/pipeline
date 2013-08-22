@@ -9,10 +9,10 @@ import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.pipeline.util.CharChunkSink;
-import com.github.rfqu.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.util.CharBufSink;
+import com.github.rfqu.pipeline.util.CharBufSource;
 
-public class TransformTest {
+public class BufCopyTransformerTest {
 	final static String string1 = "1";
 	final static String string2 = "2";
 	final static String string3 = string1+string2;
@@ -22,8 +22,8 @@ public class TransformTest {
 		DFContext.setCurrentExecutor(new ImmediateExecutor());
 	}
 	
-	StringChunkSource source;
-	CharChunkSink sink;
+	CharBufSource source;
+	CharBufSink sink;
 	
     void check1() throws InterruptedException, ExecutionException {
       source.post("J");
@@ -91,54 +91,54 @@ public class TransformTest {
     
     @Test
 	public void tNullTransform1() throws InterruptedException, ExecutionException {
-        sink=new CharChunkSink();
-        TransformNullChar tf=new TransformNullChar(4);
+        sink=new CharBufSink();
+        CopyTransformer tf=new CopyTransformer(4);
         tf.setListener(sink);
-        source=new StringChunkSource(tf);
+        source=new CharBufSource(tf);
 		check();
 	}
 	
 	@Test
 	public void tNullTransform1L() throws InterruptedException, ExecutionException {
-        sink=new CharChunkSink();
-        TransformNullChar tf=new TransformNullChar(sink, 4000);
-        source=new StringChunkSource(tf);
+        sink=new CharBufSink();
+        CopyTransformer tf=new CopyTransformer(sink, 4000);
+        source=new CharBufSource(tf);
 		check();
 	}
     
     @Test
     public void tNullTransform2() throws InterruptedException, ExecutionException {
-        sink=new CharChunkSink();
-        TransformNullChar tf1=new TransformNullChar(sink, 4);
-        TransformNullChar tf2=new TransformNullChar(tf1, 14);
-        source=new StringChunkSource(tf2);
+        sink=new CharBufSink();
+        CopyTransformer tf1=new CopyTransformer(sink, 4);
+        CopyTransformer tf2=new CopyTransformer(tf1, 14);
+        source=new CharBufSource(tf2);
         check();
     }
     
     @Test
     public void testPassExc() throws InterruptedException {
-        sink=new CharChunkSink();
-        TransformNullChar tf1=new TransformNullChar(sink, 4);
-        TransformNullChar tf2=new TransformNullChar(tf1, 14);
-        source=new StringChunkSource(tf2);
+        sink=new CharBufSink();
+        CopyTransformer tf1=new CopyTransformer(sink, 4);
+        CopyTransformer tf2=new CopyTransformer(tf1, 14);
+        source=new CharBufSource(tf2);
         checkExc();
     }
     
     @Test
     public void testPassExc2() throws InterruptedException, ExecutionException {
-        sink=new CharChunkSink();
-        TransformNullChar tf1=new TransformNullChar(sink, 4);
-        TransformNullChar tf2=new TransformNullChar(tf1, 14);
-        source=new StringChunkSource(tf2);
+        sink=new CharBufSink();
+        CopyTransformer tf1=new CopyTransformer(sink, 4);
+        CopyTransformer tf2=new CopyTransformer(tf1, 14);
+        source=new CharBufSource(tf2);
         checkExc2();
     }
     
     @Test
     public void testPassExc3() throws InterruptedException, ExecutionException {
-        sink=new CharChunkSink();
-        TransformNullChar tf1=new TransformNullChar(sink, 4);
-        TransformNullChar tf2=new TransformNullChar(tf1, 14);
-        source=new StringChunkSource(tf2);
+        sink=new CharBufSink();
+        CopyTransformer tf1=new CopyTransformer(sink, 4);
+        CopyTransformer tf2=new CopyTransformer(tf1, 14);
+        source=new CharBufSource(tf2);
         checkExc3();
     }
 }

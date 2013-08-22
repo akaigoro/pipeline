@@ -3,21 +3,26 @@ package com.github.rfqu.pipeline.util;
 import java.nio.CharBuffer;
 import java.util.concurrent.ExecutionException;
 
-import com.github.rfqu.df4j.core.ActorPort;
 import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.pipeline.core.BufChunk;
+import com.github.rfqu.pipeline.core.ErrorSink;
 
-public class CharChunkSink implements ActorPort<BufChunk<CharBuffer>> {
+public class CharBufSink extends ErrorSink<CharBuffer> {
 	StringBuilder sb=new StringBuilder();
     CompletableFuture<String> futt=new CompletableFuture<String>();
 	
 	@Override
-	public void post(BufChunk<CharBuffer> chunk) {
-		CharBuffer it=chunk.getBuffer();
-		while (it.hasRemaining()) {
-			sb.append(it.get());
+	public void post(CharBuffer buf) {
+		if (isClosed()) {
+			throw new IllegalStateException("Sink already closed");
 		}
-		chunk.free();
+		while (buf.hasRemaining()) {
+			sb.append(buf.get());
+		}
+		free(buf);
+	}
+
+	protected void free(CharBuffer buf) {
+		super.source.recycle(buf);
 	}
 
 	@Override
@@ -28,7 +33,6 @@ public class CharChunkSink implements ActorPort<BufChunk<CharBuffer>> {
 	    futt.post(sb.toString());
 	}
 
-	@Override
 	public boolean isClosed() {
 		return futt.isDone();
 	}

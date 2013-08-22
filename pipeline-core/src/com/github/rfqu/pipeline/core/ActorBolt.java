@@ -10,12 +10,12 @@ import com.github.rfqu.df4j.core.DataflowNode;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
 
-public abstract class ActorBolt<BT extends Buffer, C>
+public abstract class ActorBolt<I, O>
     extends DataflowNode
-    implements ActorPort<BufChunk<BT>>
+    implements Sink<I>, Source<O>
 {
     private Pausable<?> chunkStreams=null;
-    protected InpIterator<BT> inputChunkStream;
+    protected InpIterator<I> inputChunkStream;
 
     public ActorBolt() {
     }
@@ -25,21 +25,6 @@ public abstract class ActorBolt<BT extends Buffer, C>
     }
 
     public abstract void setListener(ActorPort<C> listener);
-    
-    @Override
-    public void close() {
-        inputChunkStream.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        return inputChunkStream.isClosed();
-    }
-
-    @Override
-    public void post(BufChunk<BT> m) {
-        inputChunkStream.post(m);
-    }
     
     @Override
     protected void act() {
