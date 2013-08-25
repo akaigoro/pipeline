@@ -1,56 +1,93 @@
 package com.github.rfqu.pipeline.core;
 
+import com.github.rfqu.df4j.core.Callback;
+import com.github.rfqu.df4j.core.StreamPort;
+
 /**
  * passes input messages through
  * 
  * Left connection should be estatblished before right one
  */
-public class CopyTransformer<IO> implements Sink<IO>, Source<IO> {
-	/** there input messages return */
-	protected Source<IO> source;
+public class CopyTransformer<IO> implements Transformer<IO, IO> {
 
-	/** there output messages go */
-	protected Sink<IO> sink;
+    //------------------ Bolt part
+    protected Callback<Object> context;
 
-	@Override
-	public void setSource(Source<IO> source) {
-		if (this.source != null) {
-			return; // avoid infinite recursion
-		}
-		this.source = source;
-		source.setSink(this);
-	}
 
-	@Override
-	public void post(IO m) {
-		sink.post(m);
-	}
+    @Override
+    public void setContext(Callback<Object> context) {
+        this.context = context;
+    }
 
-	@Override
-	public void postFailure(Throwable exc) {
-		sink.postFailure(exc);
-	}
+    public void start() {
+    }
 
-	public void close() {
-		sink.close();
-	}
+    public void stop() {
+    }
 
-	public void setSink(Sink<IO> sink) {
-		if (this.sink != null) {
-			return; // avoid infinite recursion
-		}
-		this.sink = sink;
-		sink.setSource(this);
-	}
+    //----------------- Sink part
+    
+    /**  here input messages arrive */
+    StreamPort<IO> myInputPort=new StreamPort<IO>() {
+        @Override
+        public void post(IO m) {
+            sinkPort.post(m);
+        }
 
-	@Override
-	public void recycle(IO message) {
-		source.recycle(message);
-	}
+        @Override
+        public void close() {
+            sinkPort.close();
+        }
 
-	@Override
-	public void shut() {
-		source.shut();
-	}
+        @Override
+        public boolean isClosed() {
+            return sinkPort.isClosed();
+        }
+    };
 
+    @Override
+    public StreamPort<IO> getInputPort() {
+        return myInputPort;
+    }
+    
+    /** there input messages return */
+    protected StreamPort<IO> returnPort;
+
+    @Override
+    public void setReturnPort(StreamPort<IO> returnPort) {
+        this.returnPort=returnPort;
+    }
+    
+    //----------------- Source part
+
+    /** there output messages go */
+    protected StreamPort<IO> sinkPort;
+
+    @Override
+    public void setSinkPort(StreamPort<IO> sinkPort) {
+        this.sinkPort=sinkPort;
+    }
+    
+    /** here output messages return */
+    StreamPort<IO> myReturnPort=new StreamPort<IO>() {
+        @Override
+        public void post(IO m) {
+            returnPort.post(m);
+        }
+
+        @Override
+        public void close() {
+            returnPort.close();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return returnPort.isClosed();
+        }
+    };
+
+    @Override
+    public StreamPort<IO> getReturnPort() {
+        return myReturnPort;
+    }
 }

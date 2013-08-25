@@ -2,80 +2,63 @@ package com.github.rfqu.codec.chars;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 
-import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.pipeline.core.ActorBolt;
-import com.github.rfqu.pipeline.core.BufChunk;
+import com.github.rfqu.pipeline.core.BufTransformer;
 
 /** 
  * Converts chars in ByteBuffers to butes in CharBuffers
  * @author kaigorodov
  *
  */
-class Decoder extends ActorBolt <ByteBuffer, BufChunk<CharBuffer>> {
+class Decoder extends BufTransformer <ByteBuffer, CharBuffer> {
 	static final ByteBuffer emptyByteBuf=(ByteBuffer) ByteBuffer.wrap(new byte[]{}).flip();
 
-    private int buffLen;
     protected final Charset charset;
 	protected final CharsetDecoder charSetDecoder;
-    protected  OutpCharIterator out;
+
+    private boolean decoded;
     
     public Decoder(Charset charset, int buffLen) {
         this.charset=charset;
         charSetDecoder = charset.newDecoder();
         charSetDecoder.reset();
-        this.buffLen=buffLen;
-        inputChunkStream=new InpIterator<ByteBuffer>();    }
-
-    public Decoder(Charset charset, ActorPort<BufChunk<CharBuffer>> outPort, int buffLen) {
-        this(charset, buffLen);
-        setListener(outPort);
-    }
-
-    @Override
-    public void setListener(ActorPort<BufChunk<CharBuffer>> outPort) {
-        if (outPort==null) {
-            throw new IllegalArgumentException();
+        for (int k = 0; k < 2; k++) {
+            CharBuffer buf = CharBuffer.allocate(buffLen);
+            myOutput.post(buf);
         }
-        out=new OutpCharIterator(outPort);
-        out.injectChunks(2, buffLen);
     }
 
 	@Override
-	protected void transform() {
-		for (;;) {
-            CharBuffer outBuf = out.getCurrentBuffer();
-            if (inputChunkStream.isClosed()) {
-                CoderResult cr=charSetDecoder.decode(emptyByteBuf, outBuf, true);
-                if (cr.isOverflow()) {
-                	if (!out.moveNext()) {
-                		return;
-                	}
-                }
-                cr=charSetDecoder.flush(outBuf);
-                if (cr.isOverflow()) {
-                	if (!out.moveNext()) {
-                		return;
-                	}
-                }
-                out.close();
-                return;
+    protected CoderResult transform(ByteBuffer inBuf, CharBuffer outBuf) {
+        CoderResult cr=charSetDecoder.decode(inBuf, outBuf, false);
+        if (!cr.isUnderflow() && !cr.isOverflow()) {
+            try {
+                cr.throwException();
+            } catch (CharacterCodingException e) {
+                context.postFailure(e);
             }
-            ByteBuffer inBuf=inputChunkStream.getCurrentBuffer();
-            CoderResult cr=charSetDecoder.decode(inBuf, outBuf, false);
-            if (cr.isUnderflow()) {
-            	if (!inputChunkStream.moveNext()) {
-            		return;
-            	}
-            }
-            if (cr.isOverflow()) {
-            	if (!out.moveNext()) {
-            		return;
-            	}
-            }
-		}
+        }
+        return cr;
 	}
+
+    @Override
+    protected CoderResult complete(CharBuffer outBuf) {
+        CoderResult cr;
+        if (!decoded) {
+            cr=charSetDecoder.decode(emptyByteBuf, outBuf, true);
+            if (cr.isOverflow()) {
+                return cr;
+            }
+            decoded=true;
+        }
+        cr=charSetDecoder.flush(outBuf);
+        if (cr.isOverflow()) {
+            return cr;
+        }
+        return CoderResult.UNDERFLOW;
+   }
 }

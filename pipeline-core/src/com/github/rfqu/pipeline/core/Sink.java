@@ -1,14 +1,11 @@
 package com.github.rfqu.pipeline.core;
 
-public interface Sink<I> {
-	public void setSource(Source<I> source);
+import com.github.rfqu.df4j.core.StreamPort;
 
-	public void post(I message);
+public interface Sink<I> extends Bolt {
 
-	public void close();
-	
-    /**
-     * signals failure 
-     */
-    public void postFailure(Throwable exc);
+    public void setReturnPort(StreamPort<I> returnPort);
+
+    public StreamPort<I> getInputPort();
+
 }

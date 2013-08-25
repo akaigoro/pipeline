@@ -1,13 +1,11 @@
 package com.github.rfqu.pipeline.core;
 
-public interface Source<O> {
-	
-	void setSink(Sink<O> sink);
+import com.github.rfqu.df4j.core.StreamPort;
 
-	/** returns processed message */
-	public void recycle(O message);
+public interface Source<O>  extends Bolt {
 
-	/** backward close, processed differently than Sink.close() */
-	public void shut();
+    void setSinkPort(StreamPort<O> sinkPort);
+
+    public StreamPort<O> getReturnPort();
 
 }

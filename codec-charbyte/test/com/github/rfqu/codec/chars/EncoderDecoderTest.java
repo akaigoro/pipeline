@@ -22,11 +22,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
+import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.pipeline.util.ByteChunkSink;
-import com.github.rfqu.pipeline.util.ByteChunkSource;
-import com.github.rfqu.pipeline.util.CharChunkSink;
-import com.github.rfqu.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.core.PipeLine;
+import com.github.rfqu.pipeline.util.ByteBufSink;
+import com.github.rfqu.pipeline.util.ByteBufSource;
+import com.github.rfqu.pipeline.util.CharBufSink;
+import com.github.rfqu.pipeline.util.CharBufSource;
 
 public class EncoderDecoderTest {
 	@BeforeClass
@@ -55,17 +57,20 @@ public class EncoderDecoderTest {
     }
 
     void test(String s) throws IOException, InterruptedException, ExecutionException {
-        testE(s);
-        testD(s);
+        testEncoder(s);
+        testDecoder(s);
         testDE(s);
     }
     
-    void testE(String s) throws IOException, InterruptedException, ExecutionException {
-        ByteChunkSink sink = new ByteChunkSink();
+    void testEncoder(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
-        Encoder encoder=new Encoder(charset, sink, 4);
-        StringChunkSource source = new StringChunkSource(encoder);
+        CharBufSource source = new CharBufSource();
+        Encoder encoder=new Encoder(charset, 4);
+        ByteBufSink sink = new ByteBufSink();
         
+        PipeLine pipeline = new PipeLine();
+        pipeline.setSource(source).addTransformer(encoder).setSink(sink).start();
+
         source.post(s);
         assertFalse(sink.isClosed());
         source.close();
@@ -76,33 +81,44 @@ public class EncoderDecoderTest {
         assertEquals(s, new String(res, "UTF8"));
     }
 
-    void testD(String s) throws IOException, InterruptedException, ExecutionException {
+    void testDecoder(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
-        CharChunkSink sink = new CharChunkSink();
-        Decoder decoder=new Decoder(charset, sink, 4);
-        ByteChunkSource source = new ByteChunkSource(decoder);
+        ByteBufSource source = new ByteBufSource();
+        Decoder decoder=new Decoder(charset, 4);
+        CharBufSink sink = new CharBufSink();
+        
+        PipeLine pipeline = new PipeLine();
+        pipeline.setSource(source).addTransformer(decoder).setSink(sink).start();
+        ListenableFuture<Object> future = pipeline.getFuture();
         
         byte[] sBytes = s.getBytes("UTF8");
         source.post(sBytes);
         assertFalse(sink.isClosed());
         source.close();
         assertTrue(sink.isClosed());
-        String res = sink.get();
+        String res = (String) future.get();
         assertEquals(s, res);
     }
     
     void testDE(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
-        CharChunkSink sink = new CharChunkSink();
-        Decoder decoder=new Decoder(charset, sink, 4);
-		Encoder encoder=new Encoder(charset, decoder, 5);
-        StringChunkSource source = new StringChunkSource(encoder);
-        
+        CharBufSource source = new CharBufSource();
+        Encoder encoder=new Encoder(charset, 5);
+        Decoder decoder=new Decoder(charset, 4);
+        CharBufSink sink = new CharBufSink();
+
+        PipeLine pipeline = new PipeLine();
+        pipeline.setSource(source)
+        .addTransformer(encoder)
+        .addTransformer(decoder)
+        .setSink(sink).start();
+        ListenableFuture<Object> future = pipeline.getFuture();
+
         source.post(s);
         assertFalse(sink.isClosed());
         source.close();
         assertTrue(sink.isClosed());
-        String res = sink.get();
+        String res = (String) future.get();
         assertEquals(s, res);
     }
 }

@@ -1,17 +1,17 @@
 package com.github.rfqu.pipeline.util;
 
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 
 import com.github.rfqu.df4j.core.Callback;
 import com.github.rfqu.df4j.core.StreamPort;
 import com.github.rfqu.pipeline.core.Bolt;
 import com.github.rfqu.pipeline.core.Source;
 
-public class CharBufSource implements Bolt, Source<CharBuffer>
+public class ByteBufSource 
+    implements Bolt, Source<ByteBuffer>, StreamPort<byte[]>
 {
     //------------------ Bolt part
     protected Callback<Object> context;
-
 
     @Override
     public void setContext(Callback<Object> context) {
@@ -27,13 +27,13 @@ public class CharBufSource implements Bolt, Source<CharBuffer>
     //------------------ Source part
 
     /** there output messages go */
-    protected StreamPort<CharBuffer> sinkPort;
+    protected StreamPort<ByteBuffer> sinkPort;
     
     /** here output messages return */
-    protected StreamPort<CharBuffer> myOutput=new StreamPort<CharBuffer>(){
+    protected StreamPort<ByteBuffer> myOutput=new StreamPort<ByteBuffer>(){
 
         @Override
-        public void post(CharBuffer m) {
+        public void post(ByteBuffer m) {
         }
 
         @Override
@@ -46,24 +46,26 @@ public class CharBufSource implements Bolt, Source<CharBuffer>
         }
     };
 
-    public void setSinkPort(StreamPort<CharBuffer> sinkPort) {
+    public void setSinkPort(StreamPort<ByteBuffer> sinkPort) {
         this.sinkPort=sinkPort;
     }
     
-    public StreamPort<CharBuffer> getReturnPort() {
+    public StreamPort<ByteBuffer> getReturnPort() {
         return myOutput;
     }
 
-	public void post(String s) {
-		CharBuffer buf=CharBuffer.wrap(s);
-		sinkPort.post(buf);
-	}
+    public void post(byte[] data) {
+        ByteBuffer buf=ByteBuffer.wrap(data);
+        sinkPort.post(buf);
+    }
 
-	public void close() {
+    public void close() {
         sinkPort.close();
     }
 
-    public void postFailure(Throwable exc) {
-        context.postFailure(exc);
-    }
+
+	@Override
+	public boolean isClosed() {
+		return sinkPort.isClosed();
+	}
 }
