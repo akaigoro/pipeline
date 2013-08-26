@@ -2,29 +2,13 @@ package com.github.rfqu.pipeline.util;
 
 import java.nio.ByteBuffer;
 
-import com.github.rfqu.df4j.core.Callback;
 import com.github.rfqu.df4j.core.StreamPort;
-import com.github.rfqu.pipeline.core.Bolt;
+import com.github.rfqu.pipeline.core.BoltBase;
 import com.github.rfqu.pipeline.core.Source;
 
-public class ByteBufSource 
-    implements Bolt, Source<ByteBuffer>, StreamPort<byte[]>
+public class ByteBufSource extends BoltBase
+    implements Source<ByteBuffer>, StreamPort<byte[]>
 {
-    //------------------ Bolt part
-    protected Callback<Object> context;
-
-    @Override
-    public void setContext(Callback<Object> context) {
-        this.context = context;
-    }
-
-    public void start() {
-    }
-
-    public void stop() {
-    }
-
-    //------------------ Source part
 
     /** there output messages go */
     protected StreamPort<ByteBuffer> sinkPort;

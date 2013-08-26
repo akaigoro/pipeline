@@ -22,14 +22,10 @@ class Decoder extends BufTransformer <ByteBuffer, CharBuffer> {
 
     private boolean decoded;
     
-    public Decoder(Charset charset, int buffLen) {
+    public Decoder(Charset charset) {
         this.charset=charset;
         charSetDecoder = charset.newDecoder();
         charSetDecoder.reset();
-        for (int k = 0; k < 2; k++) {
-            CharBuffer buf = CharBuffer.allocate(buffLen);
-            myOutput.post(buf);
-        }
     }
 
 	@Override
@@ -61,4 +57,11 @@ class Decoder extends BufTransformer <ByteBuffer, CharBuffer> {
         }
         return CoderResult.UNDERFLOW;
    }
+
+    public void injectBuffers(int bufCount, int buffLen) {
+        for (int k = 0; k < bufCount; k++) {
+            CharBuffer buf = CharBuffer.allocate(buffLen);
+            myOutput.post(buf);
+        }
+    }
 }

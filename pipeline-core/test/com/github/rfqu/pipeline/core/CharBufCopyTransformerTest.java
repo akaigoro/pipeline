@@ -23,7 +23,7 @@ public class CharBufCopyTransformerTest {
 		DFContext.setCurrentExecutor(new ImmediateExecutor());
 	}
 	
-    void check1(PipeLine pipeLine) throws InterruptedException, ExecutionException {
+    void check1(Pipeline pipeLine) throws InterruptedException, ExecutionException {
         CharBufSource source = (CharBufSource) pipeLine.getSource();
         ListenableFuture<Object> future = pipeLine.getFuture();
         source.post("J");
@@ -33,7 +33,7 @@ public class CharBufCopyTransformerTest {
         assertEquals("J", res);
     }
 
-    void check(PipeLine pipeLine) throws InterruptedException, ExecutionException {
+    void check(Pipeline pipeLine) throws InterruptedException, ExecutionException {
         CharBufSource source = (CharBufSource) pipeLine.getSource();
         ListenableFuture<Object> future = pipeLine.getFuture();
         source.post(string1);
@@ -44,7 +44,7 @@ public class CharBufCopyTransformerTest {
         assertEquals(string3, future.get());
     }
 
-    void checkExc(PipeLine pipeLine) throws InterruptedException {
+    void checkExc(Pipeline pipeLine) throws InterruptedException {
         CharBufSource source = (CharBufSource) pipeLine.getSource();
         ListenableFuture<Object> future = pipeLine.getFuture();
         source.post("J");
@@ -87,27 +87,27 @@ public class CharBufCopyTransformerTest {
     }
 
     abstract class PipelineGenerator {
-        abstract PipeLine make() throws InterruptedException, ExecutionException;
+        abstract Pipeline make() throws InterruptedException, ExecutionException;
     }
 
     class PipelineGenerator1 extends PipelineGenerator {
-        PipeLine make() throws InterruptedException, ExecutionException {
+        Pipeline make() throws InterruptedException, ExecutionException {
             CharBufSource source = new CharBufSource();
             CharBufCopyTransformer tf = new CharBufCopyTransformer(4);
             CharBufSink sink = new CharBufSink();
-            PipeLine pipeline = new PipeLine();
+            Pipeline pipeline = new Pipeline();
             pipeline.setSource(source).addTransformer(tf).setSink(sink).start();
             return pipeline;
         }
     }
 
     class PipelineGenerator2 extends PipelineGenerator {
-        PipeLine make() throws InterruptedException, ExecutionException {
+        Pipeline make() throws InterruptedException, ExecutionException {
             CharBufSource source = new CharBufSource();
             CharBufCopyTransformer tf = new CharBufCopyTransformer(4);
             CharBufCopyTransformer tf2 = new CharBufCopyTransformer(4);
             CharBufSink sink = new CharBufSink();
-            PipeLine pipeline = new PipeLine();
+            Pipeline pipeline = new Pipeline();
             pipeline.setSource(source).addTransformer(tf).addTransformer(tf2).setSink(sink).start();
             return pipeline;
         }

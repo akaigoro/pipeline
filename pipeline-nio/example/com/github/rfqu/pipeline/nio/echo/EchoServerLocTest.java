@@ -13,14 +13,14 @@ public class EchoServerLocTest {
     EchoServerTest t=new EchoServerTest();
 
     public void localTest(int maxConn, int numclients, int rounds) throws Exception  {
-        EchoServer es = new EchoServer(t.iaddr);
-        es.start(maxConn);
+        EchoServer es = new EchoServer(t.iaddr, maxConn);
+        es.start();
         Thread.sleep(100);
         try {
             t.testThroughput(numclients, rounds);
         } finally {
             es.close(); // start closing process
-            es.getCloseEvent().get();
+            es.getFuture().get();
         }
         out.println("all closed");
     }

@@ -14,7 +14,7 @@ import com.github.rfqu.df4j.ext.ImmediateExecutor;
 import com.github.rfqu.pipeline.util.CharBufSink;
 import com.github.rfqu.pipeline.util.CharBufSource;
 
-public class PipeLineTest {
+public class PipelineTest {
 	final static String string1 = "1";
 	final static String string2 = "2";
 	final static String string3 = string1+string2;
@@ -24,7 +24,7 @@ public class PipeLineTest {
         DFContext.setCurrentExecutor(new ImmediateExecutor());
     }
     
-    void check1(PipeLine pipeLine) throws InterruptedException, ExecutionException {
+    void check1(Pipeline pipeLine) throws InterruptedException, ExecutionException {
         CharBufSource source = (CharBufSource) pipeLine.getSource();
         ListenableFuture<Object> future = pipeLine.getFuture();
         source.post("J");
@@ -34,7 +34,7 @@ public class PipeLineTest {
         assertEquals("J", future.get());
     }
 
-    void check2(PipeLine pipeLine) throws InterruptedException, ExecutionException {
+    void check2(Pipeline pipeLine) throws InterruptedException, ExecutionException {
         CharBufSource source = (CharBufSource) pipeLine.getSource();
         ListenableFuture<Object> future = pipeLine.getFuture();
         source.post(string1);
@@ -77,7 +77,7 @@ public class PipeLineTest {
 
     @Test
     public void testPostFailure() throws InterruptedException {
-        PipeLine pipeline = new PipeLine();
+        Pipeline pipeline = new Pipeline();
         CharBufSource source = new CharBufSource();
         CharBufSink sink = new CharBufSink();
         ListenableFuture<Object> future = pipeline.getFuture();
@@ -99,12 +99,12 @@ public class PipeLineTest {
     }
 
     abstract class PipelineGenerator {
-        abstract PipeLine make() throws InterruptedException, ExecutionException;
+        abstract Pipeline make() throws InterruptedException, ExecutionException;
     }
 
     class PipelineGenerator0 extends PipelineGenerator {
-        PipeLine make() throws InterruptedException, ExecutionException {
-            PipeLine pipeline = new PipeLine();
+        Pipeline make() throws InterruptedException, ExecutionException {
+            Pipeline pipeline = new Pipeline();
             CharBufSource source = new CharBufSource();
             CharBufSink sink = new CharBufSink();
             pipeline.setSource(source).setSink(sink);
@@ -114,8 +114,8 @@ public class PipeLineTest {
     }
 
     class PipelineGenerator1 extends PipelineGenerator {
-        PipeLine make() throws InterruptedException, ExecutionException {
-            PipeLine pipeline = new PipeLine();
+        Pipeline make() throws InterruptedException, ExecutionException {
+            Pipeline pipeline = new Pipeline();
             CharBufSource source = new CharBufSource();
             CharBufSink sink = new CharBufSink();
 
@@ -127,8 +127,8 @@ public class PipeLineTest {
     }
 
     class PipelineGenerator2 extends PipelineGenerator {
-        PipeLine make() throws InterruptedException, ExecutionException {
-            PipeLine pipeline = new PipeLine();
+        Pipeline make() throws InterruptedException, ExecutionException {
+            Pipeline pipeline = new Pipeline();
             CharBufSource source = new CharBufSource();
             CharBufSink sink = new CharBufSink();
 

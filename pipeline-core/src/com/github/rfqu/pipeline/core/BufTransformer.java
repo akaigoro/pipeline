@@ -13,7 +13,7 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
     protected StreamInput<I> myInput=new StreamInput<I>();
 
     /** here output messages return */
-    protected StreamOutput<O> myOutput=new StreamOutput<O>();
+    protected StreamInput<O> myOutput=new StreamInput<O>();
 
     public BufTransformer() {
     }
@@ -47,7 +47,7 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
             CoderResult res=transform(inbuf, outbuf);
 
             if (res.isUnderflow()) {
-                returnPort.post(inbuf);  // free inbuf
+                free(inbuf);  // free inbuf
                 if (!myInput.moveNext()) {
                     if (outbuf.position()==0) {
                         myOutput.pushback();

@@ -15,6 +15,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
 
@@ -23,8 +24,10 @@ import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
 import com.github.rfqu.df4j.core.ListenableFuture;
+import com.github.rfqu.df4j.core.StreamPort;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.pipeline.core.PipeLine;
+import com.github.rfqu.pipeline.core.Pipeline;
+import com.github.rfqu.pipeline.core.Source;
 import com.github.rfqu.pipeline.util.ByteBufSink;
 import com.github.rfqu.pipeline.util.ByteBufSource;
 import com.github.rfqu.pipeline.util.CharBufSink;
@@ -65,10 +68,11 @@ public class EncoderDecoderTest {
     void testEncoder(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
         CharBufSource source = new CharBufSource();
-        Encoder encoder=new Encoder(charset, 4);
+        Encoder encoder=new Encoder(charset);
+        encoder.injectBuffers(2, 4);
         ByteBufSink sink = new ByteBufSink();
         
-        PipeLine pipeline = new PipeLine();
+        Pipeline pipeline = new Pipeline();
         pipeline.setSource(source).addTransformer(encoder).setSink(sink).start();
 
         source.post(s);
@@ -84,10 +88,11 @@ public class EncoderDecoderTest {
     void testDecoder(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
         ByteBufSource source = new ByteBufSource();
-        Decoder decoder=new Decoder(charset, 4);
+        Decoder decoder=new Decoder(charset);
+        decoder.injectBuffers(2, 4);
         CharBufSink sink = new CharBufSink();
         
-        PipeLine pipeline = new PipeLine();
+        Pipeline pipeline = new Pipeline();
         pipeline.setSource(source).addTransformer(decoder).setSink(sink).start();
         ListenableFuture<Object> future = pipeline.getFuture();
         
@@ -103,11 +108,13 @@ public class EncoderDecoderTest {
     void testDE(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
         CharBufSource source = new CharBufSource();
-        Encoder encoder=new Encoder(charset, 5);
-        Decoder decoder=new Decoder(charset, 4);
+        Encoder encoder=new Encoder(charset);
+        encoder.injectBuffers(2, 4);
+        Decoder decoder=new Decoder(charset);
+        decoder.injectBuffers(2, 4);
         CharBufSink sink = new CharBufSink();
 
-        PipeLine pipeline = new PipeLine();
+        Pipeline pipeline = new Pipeline();
         pipeline.setSource(source)
         .addTransformer(encoder)
         .addTransformer(decoder)
@@ -121,4 +128,10 @@ public class EncoderDecoderTest {
         String res = (String) future.get();
         assertEquals(s, res);
     }
+    
+    void injectBuffers(Source<ByteBuffer> source, int bufCount, int buffLen) {
+        StreamPort<ByteBuffer> port = source.getReturnPort();
+    }
+
+
 }

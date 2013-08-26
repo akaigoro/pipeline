@@ -12,7 +12,6 @@ import com.github.rfqu.df4j.core.Actor;
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.Timer;
 import com.github.rfqu.df4j.testutil.DoubleValue;
-import com.github.rfqu.pipeline.nio.AsyncChannelFactory;
 
 /**
  * requires com.github.rfqu.df4j.ioexample.EchoServer to be launched as an application
@@ -26,15 +25,14 @@ public class EchoServerTest {
     static PrintStream out=System.out;
     static PrintStream err=System.err;
 
-    AsyncChannelFactory asyncChannelFactory=AsyncChannelFactory.getCurrentAsyncChannelFactory();
 	InetSocketAddress iaddr = new InetSocketAddress("localhost", EchoServer.defaultPort);
 	int numclients;
     int rounds; // per client
 	Timer timer;
-	HashMap<Integer, ClientConnection> clients=new HashMap<Integer, ClientConnection>();
+	HashMap<Integer, Connection> clients=new HashMap<Integer, Connection>();
     Aggregator sink;
 	
-    public void clientFinished(ClientConnection clientConnection, DoubleValue avg) {
+    public void clientFinished(Connection clientConnection, DoubleValue avg) {
 		sink.post(avg);
 		clients.remove(clientConnection.id);
 	}
@@ -49,7 +47,7 @@ public class EchoServerTest {
         
         long start = System.currentTimeMillis();
         for (int i = 0; i < numclients; i++) {
-            ClientConnection cconn = new ClientConnection(this, iaddr, rounds);
+            Connection cconn = new Connection(this, iaddr, rounds);
 			clients.put(cconn.id, cconn);
 			try {
                 cconn.getConnEvent().get(); // wait connection to connect

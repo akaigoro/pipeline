@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 by Alexei Kaigorodov
+ * Copyright 2013 by Alexei Kaigorodov
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
  *     http://www.apache.org/licenses/LICENSE-2.0
@@ -9,45 +9,118 @@
  */
 package com.github.rfqu.pipeline.nio;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.ListenableFuture;
+import com.github.rfqu.df4j.core.Port;
+import com.github.rfqu.pipeline.core.SourceNode;
 
 /**
+ * Accepts incoming connections, wraps them in {@link AsyncSocketChannel},
+ * and sends to the next node in the pipeline.
  * For using on server side.
- * <pre><code>AsyncServerSocketChannel assc=...;
- * assc.bind(SocketAddress);
- * AsyncSocketChannel asc=assc.accept(); // non-blocking operation
- * asc.write(Request); // real I/O will start after actual client connection 
- * asc.read(Request);
+ * <pre><code>AsyncServerSocketChannel assc =
+ *     new AsyncServerSocketChannel(socketAddress, connNumber);
+ * PipeLine pipeline = new PipeLine();
+ * pipeline.setSource(assc)...
  * </code></pre>
  */
-public abstract class AsyncServerSocketChannel implements Closeable {
-    protected SocketAddress addr;
+public class AsyncServerSocketChannel extends SourceNode<AsyncSocketChannel>
+    implements CompletionHandler<AsynchronousSocketChannel, Void>
+{
     protected CompletableFuture<AsyncServerSocketChannel> closeEvent =
             new CompletableFuture<AsyncServerSocketChannel>();
 
-    public abstract AsyncServerSocketChannel bind(SocketAddress addr) throws IOException;
+    protected volatile AsynchronousServerSocketChannel assc;
+    
+    /** prevents simultaneous channel.accept() */
+    protected Semafor channelAccess = new Semafor();
+    
+    /** limits the number of active connections */
+    protected Semafor connCount = new Semafor();
+    
+    /**
+     * used {@link AsyncSocketChannel}s return here.
+     * They are not reused, just counted by a Semafore.
+     */
+    protected Port<AsyncSocketChannel> returnPort=new Port<AsyncSocketChannel>(){
+
+        @Override
+        public void post(AsyncSocketChannel message) {
+            connCount.up();
+        }
+    };
+    
+    public AsyncServerSocketChannel(SocketAddress addr, int connNumber) throws IOException {
+        if (addr==null) {
+            throw new NullPointerException();
+        }
+        if (connNumber<=0) {
+            throw new IllegalArgumentException("connNumber must be positive");
+        }
+        AsynchronousChannelGroup acg=AsyncChannelCroup.getCurrentACGroup();
+        assc=AsynchronousServerSocketChannel.open(acg);
+        assc.bind(addr);
+        connCount.up(connNumber);
+        channelAccess.up();
+    }
+
+    @Override
+    public Port<AsyncSocketChannel> getReturnPort() {
+        return returnPort;
+    }
 
     public ListenableFuture<AsyncServerSocketChannel> getCloseEvent() {
         return closeEvent;
     }
     
-    /**
-     * creates new AsyncSocketChannel, and makes it to wait for incoming client connection request.
-     * 
-     * @return 
-     * @throws ClosedChannelException 
-     */
-    public abstract ListenableFuture<AsyncSocketChannel> accept() throws ClosedChannelException;
+    public void close() {
+        try {
+            assc.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assc = null;
+        closeEvent.post(this);
+    }
 
-    public abstract void close();
-
-	public boolean isClosed() {
+    public boolean isClosed() {
         return closeEvent.isDone();
-	}
+    }
+
+    //====================== Dataflow backend
+
+    @Override
+    protected void act() {
+        assc.accept(null, this);
+    }
+
+    //====================== CompletionHandler's backend
+
+    @Override
+    public void completed(AsynchronousSocketChannel result, Void attachment) {
+        AsyncSocketChannel asc=new AsyncSocketChannel(result);
+        sinkPort.post(asc);
+        channelAccess.up(); // allow assc.accpt()
+    }
+
+    /** new client connection failed
+     * TODO count failures, do not retry if many 
+     */
+    @Override
+    public void failed(Throwable exc, Void attachment) {
+        if (exc instanceof AsynchronousCloseException) {
+            // channel closed.
+            close();
+        } else {
+            channelAccess.up();
+        }
+    }
 }

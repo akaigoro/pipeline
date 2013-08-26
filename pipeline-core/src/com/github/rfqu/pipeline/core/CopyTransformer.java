@@ -1,6 +1,7 @@
 package com.github.rfqu.pipeline.core;
 
 import com.github.rfqu.df4j.core.Callback;
+import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
 
 /**
@@ -51,10 +52,10 @@ public class CopyTransformer<IO> implements Transformer<IO, IO> {
     }
     
     /** there input messages return */
-    protected StreamPort<IO> returnPort;
+    protected Port<IO> returnPort;
 
     @Override
-    public void setReturnPort(StreamPort<IO> returnPort) {
+    public void setReturnPort(Port<IO> returnPort) {
         this.returnPort=returnPort;
     }
     
@@ -69,25 +70,15 @@ public class CopyTransformer<IO> implements Transformer<IO, IO> {
     }
     
     /** here output messages return */
-    StreamPort<IO> myReturnPort=new StreamPort<IO>() {
+    Port<IO> myReturnPort=new Port<IO>() {
         @Override
         public void post(IO m) {
             returnPort.post(m);
         }
-
-        @Override
-        public void close() {
-            returnPort.close();
-        }
-
-        @Override
-        public boolean isClosed() {
-            return returnPort.isClosed();
-        }
     };
 
     @Override
-    public StreamPort<IO> getReturnPort() {
+    public Port<IO> getReturnPort() {
         return myReturnPort;
     }
 }

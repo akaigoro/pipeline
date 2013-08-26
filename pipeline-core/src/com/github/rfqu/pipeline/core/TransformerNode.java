@@ -2,51 +2,31 @@ package com.github.rfqu.pipeline.core;
 
 import java.util.concurrent.Executor;
 
-import com.github.rfqu.df4j.core.Callback;
-import com.github.rfqu.df4j.core.DataflowNode;
+import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
 
 /**
- * {@link mySinkPort} and {@link myreturnPort} must be initialized in subclasses
  * 
  * @author kaigorodov
  *
  * @param <I> type of input messages
  * @param <O> type of output messages
  */
-public abstract class TransformerNode<I, O> extends DataflowNode
+public abstract class TransformerNode<I, O> extends BoltNode
     implements Transformer<I, O>
 {
-    //----------------- Bolt part
-    
-    protected Callback<Object> context;
-    protected Lockup lockUp = new Lockup();
-
-    public void setContext(Callback<Object> context) {
-        this.context = context;
-    }
-
-    public void start() {
-        lockUp.on();
-    }
-
-    public void stop() {
-        lockUp.off();
-    }
-
-    @Override
-    protected void handleException(Throwable exc) {
-        context.postFailure(exc);
-    }
-
     //----------------- Sink part
     
     /** there input messages return */
-    protected StreamPort<I> returnPort;
+    private Port<I> returnPort;
 
     @Override
-    public void setReturnPort(StreamPort<I> returnPort) {
+    public void setReturnPort(Port<I> returnPort) {
         this.returnPort=returnPort;
+    }
+
+    protected void free(I item) {
+        returnPort.post(item);
     }
 
     //----------------- Source part
@@ -66,15 +46,5 @@ public abstract class TransformerNode<I, O> extends DataflowNode
 
     public TransformerNode(Executor executor) {
         super(executor);
-    }
-
-	/**
-	 * allows post() after close()
-	 *
-	 * @param <T>
-	 */
-    protected class StreamOutput<T> extends StreamInput<T> {
-        protected void overflow(T token) {
-        }
     }
 }

@@ -1,4 +1,4 @@
-package com.github.rfqu.pipline.nio;
+package com.github.rfqu.pipeline.nio.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -12,23 +12,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.ListenableFuture;
-import com.github.rfqu.pipeline.nio.AsyncChannelFactory;
 import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
 import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
-import com.github.rfqu.pipeline.nio.SocketIORequest;
 
 public  class ConnectionTest {
     static final int BUF_SIZE = 128;
 //    static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 9990);
     static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 8007);
 
-    protected AsyncChannelFactory channelFactory;
-    AsyncServerSocketChannel assc;
+    AsyncServerSocketChannel assc; 
     
     @Before
     public void init() throws IOException {
-    	channelFactory=AsyncChannelFactory.getCurrentAsyncChannelFactory();
-        assc = channelFactory.newAsyncServerSocketChannel();
+        assc = new AsyncServerSocketChannel();
         assc.bind(local9990);
     }
 
@@ -114,7 +110,7 @@ public  class ConnectionTest {
     @Test
     public void smokeTest1() throws Exception {
     	ListenableFuture<AsyncSocketChannel> connectionEvent = assc.accept();
-    	clientConn=channelFactory.newAsyncSocketChannel();
+    	clientConn=new AsyncSocketChannel();
         clientConn.connect(local9990);
 
         Thread.sleep(50);

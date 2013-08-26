@@ -1,4 +1,4 @@
-package com.github.rfqu.pipline.nio;
+package com.github.rfqu.pipeline.nio.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,7 +25,7 @@ public abstract class LimitedServerTest {
 //    static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 9990);
     static final InetSocketAddress local9990 = new InetSocketAddress("localhost", 8007);
 
-    protected AsyncChannelFactory channelFactory;
+    AsyncChannelFactory channelFactory;
  
     @Before
     public void init() {

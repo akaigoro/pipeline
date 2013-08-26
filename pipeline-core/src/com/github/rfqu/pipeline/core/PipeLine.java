@@ -19,8 +19,9 @@ import com.github.rfqu.df4j.core.ListenableFuture;
  * @author Alexei Kaigorodov
  *
  */
-public class PipeLine {
+public class Pipeline {
     ArrayList<Bolt> nodes=new ArrayList<Bolt>();
+    
     CompletableFuture<Object> completer=new CompletableFuture<Object>(){
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -72,13 +73,13 @@ public class PipeLine {
         }
         
         public <O> Connector<O> addTransformer(Transformer<I,O> tr) {
-            PipeLine.this.connect(source, tr);
+            Pipeline.this.connect(source, tr);
             return new Connector<O>(tr);
         }
         
-        public PipeLine setSink(Sink<I> sink) {
-            PipeLine.this.connect(source, sink);
-            return PipeLine.this;
+        public Pipeline setSink(Sink<I> sink) {
+            Pipeline.this.connect(source, sink);
+            return Pipeline.this;
         }
     }
 
