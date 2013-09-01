@@ -9,36 +9,18 @@
  */
 package com.github.rfqu.codec.json.pushparser;
 
-import static com.github.rfqu.codec.json.pushparser.Scanner.*;
-
-import java.nio.CharBuffer;
-
 import com.github.rfqu.codec.json.builder.JsonBulderFactory;
 import com.github.rfqu.codec.json.builder.ListBuilder;
 import com.github.rfqu.codec.json.builder.MapBuilder;
-import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.pipeline.core.ActorBolt;
-import com.github.rfqu.pipeline.core.BufChunk;
+import com.github.rfqu.codec.json.parser.ParseException;
 
-public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
-    public final ActorBolt<CharBuffer, Void>.InpCharIterator inp;
-    protected Scanner scanner;
+public class JsonParser extends Scanner {
     protected final JsonBulderFactory factory;
-    protected final CompletableFuture<Object> res;
     protected Parser currentParser;
-    protected TokenPort tokenPort=new MyTokenPort();
 
     public JsonParser(JsonBulderFactory factory) {
         this.factory = factory;
-        res = new CompletableFuture<Object>();
         new RootTokenPort();
-        scanner=new Scanner(tokenPort);
-        inp=scanner.inp;
-    }
-
-    public CompletableFuture<Object> getResult() throws Exception {
-        return res;
     }
 
     protected void setCurrentParser(Parser tp) {
@@ -101,25 +83,22 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
          currentParser.setValue(res);
      }
 
-     class MyTokenPort extends TokenPort {
-         
-         @Override
-         public void postToken(char tokenType, String tokenString) {
-             try {
-                 currentParser.postToken(tokenType, tokenString);
-             } catch (Exception e) {
-                 currentParser.setParseError(e);
-             }
-         }
-
-         @Override
-         public void setParseError(Throwable e) {
+     
+     @Override
+     public void postToken(char tokenType, String tokenString) {
+         try {
+             currentParser.postToken(tokenType, tokenString);
+         } catch (Exception e) {
              currentParser.setParseError(e);
          }
+     }
 
-    }
-     
-     public abstract class Parser extends TokenPort {
+     @Override
+     public void setParseError(Throwable e) {
+         currentParser.setParseError(e);
+     }
+
+     public abstract class Parser {
         final Parser parent;
 
         protected Parser(Parser parent) {
@@ -142,20 +121,16 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
             setCurrentParser(parent);
         }
 
-        @Override
         public void setParseError(Throwable e) {
             parent.setParseError(e);
         }
-/*
-        public void postParserError(String message) {
-            setParseError(message);
+        
+        public void postParseError(String message) {
+            setParseError(new ParseException(message));
         }
 
-        protected void setParseError(String message) {
-            parent.setParseError(message);
-        }
-*/
         public abstract void setValue(Object value);
+        public abstract void postToken(char tokenType, String tokenString);
     }
 
     protected class RootTokenPort extends Parser {
@@ -174,8 +149,6 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
                 firstToken(tokenType, tokenString);
         	} else if (tokenType!=EOF) {
                 postParseError("EOF expected");
-            } else if (!res.isDone()) {
-                postParseError("unexpected EOF");
         	}
         }
 
@@ -194,18 +167,12 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
 
         @Override
         public void setValue(Object value) {
-        	if (!res.isDone()) {
-        	    res.post(value);
-        	} else {
-        	    postParseError("EOF expected");
-        	}
+        	context.post(value);
         }
 
         @Override
         public void setParseError(Throwable e) {
-            if (!res.isDone()) { // only first error matters TODO if it was value, not error
-                res.postFailure(scanner.toParseException(e));
-            }
+        	context.postFailure(e);
         }
     }
 
@@ -216,13 +183,7 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
             super(parent);
             this.builder = builder;
         }
-
-        @Override
-        public void setParseError(Throwable e) {
-            if (!res.isDone()) { // only first error matters
-                res.postFailure(scanner.toParseException(e));
-            }
-        }
+        
         @Override
         public void postToken(char tokenType, String tokenString) {
             switch (tokenType) {
@@ -301,26 +262,5 @@ public class JsonParser implements ActorPort<BufChunk<CharBuffer>> {
         public void setValue(Object value) {
             builder.set(key, value);
         }
-    }
-
-    @Override
-    public void close() {
-        scanner.close();
-    }
-
-    @Override
-    public boolean isClosed() {
-        // TODO Auto-generated method stub
-        return scanner.isClosed();
-    }
-
-    @Override
-    public void post(BufChunk<CharBuffer> m) {
-        scanner.post(m);
-    }
-
-    @Override
-    public void postFailure(Throwable exc) {
-        scanner.postFailure(exc);
     }
 }

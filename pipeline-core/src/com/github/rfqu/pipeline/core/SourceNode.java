@@ -24,8 +24,8 @@ public abstract class SourceNode<O> extends BoltNode
     }
     
     //-------------------------
-	
-    public SourceNode() {
+
+	public SourceNode() {
     }
 
     public SourceNode(Executor executor) {

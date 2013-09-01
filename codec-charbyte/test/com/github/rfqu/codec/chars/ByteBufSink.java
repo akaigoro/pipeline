@@ -1,10 +1,11 @@
-package com.github.rfqu.pipeline.util;
+package com.github.rfqu.codec.chars;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
+import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
 import com.github.rfqu.pipeline.core.BoltBase;
@@ -49,7 +50,7 @@ public class ByteBufSink extends BoltBase implements Sink<ByteBuffer> {
         return myInput;
     }
 
-	public byte[] get() throws InterruptedException, ExecutionException {
-		return futt.get();
+	public ListenableFuture<byte[]> getFuture() throws InterruptedException, ExecutionException {
+		return futt;
 	}
 }

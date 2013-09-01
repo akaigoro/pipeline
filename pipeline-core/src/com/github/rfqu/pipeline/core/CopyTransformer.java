@@ -73,7 +73,9 @@ public class CopyTransformer<IO> implements Transformer<IO, IO> {
     Port<IO> myReturnPort=new Port<IO>() {
         @Override
         public void post(IO m) {
-            returnPort.post(m);
+        	if (returnPort!=null) {
+                returnPort.post(m);
+        	}
         }
     };
 
@@ -81,4 +83,9 @@ public class CopyTransformer<IO> implements Transformer<IO, IO> {
     public Port<IO> getReturnPort() {
         return myReturnPort;
     }
+	
+    @Override
+	public void close() {
+    	myInputPort.close();
+	}
 }

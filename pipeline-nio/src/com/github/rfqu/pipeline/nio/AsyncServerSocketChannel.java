@@ -17,8 +17,6 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
-import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.pipeline.core.SourceNode;
 
@@ -35,9 +33,6 @@ import com.github.rfqu.pipeline.core.SourceNode;
 public class AsyncServerSocketChannel extends SourceNode<AsyncSocketChannel>
     implements CompletionHandler<AsynchronousSocketChannel, Void>
 {
-    protected CompletableFuture<AsyncServerSocketChannel> closeEvent =
-            new CompletableFuture<AsyncServerSocketChannel>();
-
     protected volatile AsynchronousServerSocketChannel assc;
     
     /** prevents simultaneous channel.accept() */
@@ -51,7 +46,6 @@ public class AsyncServerSocketChannel extends SourceNode<AsyncSocketChannel>
      * They are not reused, just counted by a Semafore.
      */
     protected Port<AsyncSocketChannel> returnPort=new Port<AsyncSocketChannel>(){
-
         @Override
         public void post(AsyncSocketChannel message) {
             connCount.up();
@@ -72,27 +66,25 @@ public class AsyncServerSocketChannel extends SourceNode<AsyncSocketChannel>
         channelAccess.up();
     }
 
+    /** Sinks need not bother to return connections.
+     *  They return themselves when closing.
+     */
     @Override
     public Port<AsyncSocketChannel> getReturnPort() {
-        return returnPort;
+        return null;
     }
 
-    public ListenableFuture<AsyncServerSocketChannel> getCloseEvent() {
-        return closeEvent;
-    }
-    
-    public void close() {
+    public synchronized void close() {
+    	if (assc==null) {
+    		return;
+    	}
         try {
             assc.close();
+            context.post(null);
         } catch (IOException e) {
-            e.printStackTrace();
+            context.postFailure(e);
         }
         assc = null;
-        closeEvent.post(this);
-    }
-
-    public boolean isClosed() {
-        return closeEvent.isDone();
     }
 
     //====================== Dataflow backend
@@ -106,9 +98,14 @@ public class AsyncServerSocketChannel extends SourceNode<AsyncSocketChannel>
 
     @Override
     public void completed(AsynchronousSocketChannel result, Void attachment) {
-        AsyncSocketChannel asc=new AsyncSocketChannel(result);
-        sinkPort.post(asc);
-        channelAccess.up(); // allow assc.accpt()
+        try {
+            AsyncSocketChannel asc=new AsyncSocketChannel(result, returnPort);
+            sinkPort.post(asc);
+            channelAccess.up(); // allow assc.accpt()
+        } catch (Throwable e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     /** new client connection failed

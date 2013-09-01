@@ -15,7 +15,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
 
@@ -23,15 +22,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
-import com.github.rfqu.df4j.core.ListenableFuture;
-import com.github.rfqu.df4j.core.StreamPort;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
 import com.github.rfqu.pipeline.core.Pipeline;
-import com.github.rfqu.pipeline.core.Source;
-import com.github.rfqu.pipeline.util.ByteBufSink;
-import com.github.rfqu.pipeline.util.ByteBufSource;
 import com.github.rfqu.pipeline.util.CharBufSink;
 import com.github.rfqu.pipeline.util.CharBufSource;
+import com.github.rfqu.pipeline.util.String2ByteBuf;
 
 public class EncoderDecoderTest {
 	@BeforeClass
@@ -76,32 +71,30 @@ public class EncoderDecoderTest {
         pipeline.setSource(source).addTransformer(encoder).setSink(sink).start();
 
         source.post(s);
-        assertFalse(sink.isClosed());
+        assertFalse(sink.getFuture().isDone());
         source.close();
-        assertTrue(sink.isClosed());
+        assertTrue(sink.getFuture().isDone());
         byte[] expectedBytes = s.getBytes("UTF8");
-        byte[] res = sink.get();
+        byte[] res = sink.getFuture().get();
         assertTrue(byteArraysEqual(expectedBytes, res));
         assertEquals(s, new String(res, "UTF8"));
     }
 
     void testDecoder(String s) throws IOException, InterruptedException, ExecutionException {
         Charset charset=Charset.forName("UTF8");
-        ByteBufSource source = new ByteBufSource();
+        String2ByteBuf source = new String2ByteBuf();
         Decoder decoder=new Decoder(charset);
         decoder.injectBuffers(2, 4);
         CharBufSink sink = new CharBufSink();
         
         Pipeline pipeline = new Pipeline();
         pipeline.setSource(source).addTransformer(decoder).setSink(sink).start();
-        ListenableFuture<Object> future = pipeline.getFuture();
         
-        byte[] sBytes = s.getBytes("UTF8");
-        source.post(sBytes);
+        source.post(s);
         assertFalse(sink.isClosed());
         source.close();
         assertTrue(sink.isClosed());
-        String res = (String) future.get();
+        String res = (String) sink.getOutput().take();
         assertEquals(s, res);
     }
     
@@ -119,19 +112,12 @@ public class EncoderDecoderTest {
         .addTransformer(encoder)
         .addTransformer(decoder)
         .setSink(sink).start();
-        ListenableFuture<Object> future = pipeline.getFuture();
 
         source.post(s);
         assertFalse(sink.isClosed());
         source.close();
         assertTrue(sink.isClosed());
-        String res = (String) future.get();
+        String res = (String) sink.getOutput().take();
         assertEquals(s, res);
     }
-    
-    void injectBuffers(Source<ByteBuffer> source, int bufCount, int buffLen) {
-        StreamPort<ByteBuffer> port = source.getReturnPort();
-    }
-
-
 }

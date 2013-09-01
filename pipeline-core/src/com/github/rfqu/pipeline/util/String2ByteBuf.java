@@ -1,0 +1,62 @@
+package com.github.rfqu.pipeline.util;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+
+import com.github.rfqu.df4j.core.StreamPort;
+import com.github.rfqu.pipeline.core.TransformerNode;
+
+public class String2ByteBuf extends TransformerNode<String, ByteBuffer>
+{
+    //----------------------- Source
+
+    /** there output messages go */
+    protected StreamPort<ByteBuffer> sinkPort;
+    
+    public void setSinkPort(StreamPort<ByteBuffer> sinkPort) {
+        this.sinkPort=sinkPort;
+    }
+    
+    public StreamPort<ByteBuffer> getReturnPort() {
+        return null; // no return required
+    }
+
+	public void post(String s) {
+		try {
+			byte[] data = s.getBytes("UTF8");
+			ByteBuffer buf=ByteBuffer.wrap(data);
+	        sinkPort.post(buf);
+		} catch (UnsupportedEncodingException e) {
+			// cannot happen
+			throw new RuntimeException(e);
+		}
+    }
+
+    public void close() {
+        sinkPort.close();
+    }
+
+    public void postFailure(Throwable exc) {
+        context.postFailure(exc);
+    }
+    
+    //----------------- backend
+
+    @Override
+    protected void act(String message) throws Exception {
+        String str=input.get();
+        try {
+            byte[] array=str.getBytes("UTF8");
+            ByteBuffer buf=ByteBuffer.wrap(array);
+            sinkPort.post(buf);
+        } catch (UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void complete() throws Exception {
+        sinkPort.close();
+    }
+}

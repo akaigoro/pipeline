@@ -1,12 +1,11 @@
 package com.github.rfqu.pipeline.nio.echo;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import com.github.rfqu.df4j.core.Callback;
 import com.github.rfqu.df4j.core.ListenableFuture;
-import com.github.rfqu.df4j.core.StreamPort;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.SinkNode;
 import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
@@ -15,83 +14,49 @@ import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
 /**
 * To run tests, {@see EchoServerLockTest} and {@see EchoServerGlobTest}.
 */
-public class EchoServer  {
+public class EchoServer implements Closeable {
     public static final int defaultPort = 8007;
     public static final int BUF_SIZE = 128;
 
-    AsyncServerSocketChannel acceptor;
+    AsyncServerSocketChannel assch;
     Reactor reactor=new Reactor();
-    Pipeline pipeline = new Pipeline();
-    ListenableFuture<Object> future = pipeline.getFuture();
+    Pipeline acceptor = new Pipeline();
     
     public EchoServer(SocketAddress addr, int maxConn) throws IOException {
-        acceptor=new AsyncServerSocketChannel(addr, maxConn);
-        pipeline.setSource(acceptor).setSink(reactor);
-        reactor.connCount.up(maxConn);
+        assch=new AsyncServerSocketChannel(addr, maxConn);
+        acceptor.setSource(assch).setSink(reactor);
     }
 
     public ListenableFuture<Object> start() {
-        pipeline.start();
-        return future;
+        acceptor.start();
+        return acceptor;
    }
 
     public void close() {
-        pipeline.stop();
-        acceptor.close();
+        acceptor.stop();
+        assch.close();
     }
 
     public ListenableFuture<Object> getFuture() {
-        return future;
+        return acceptor;
     }
 
     /**
-     * accepted connections, formatted as {@link AsyncSocketChannel},
-     * arrive to {@link myInput}.
+     * accepted connections, formatted as {@link AsyncSocketChannel}, arrive to {@link myInput}.
      * For each connection, echoing pipline is created.
-     * After connections, they should be returned to the peer {@link AsyncServerSocketChannel}.
      */
     class Reactor extends SinkNode<AsyncSocketChannel> {
-        protected Semafor connCount=new Semafor();
-        
-        protected StreamInput<AsyncSocketChannel> myInput=new StreamInput<AsyncSocketChannel>();
 
+        /** creates a pipeline which serves one client, echoing input packets
+         */
         @Override
-        public StreamPort<AsyncSocketChannel> getInputPort() {
-            return myInput;
-        }
-
-        @Override
-        protected void act() {
-            AsyncSocketChannel channel=myInput.get();
-            EchoPipeline pipeline = new EchoPipeline(channel);
+        protected void act(AsyncSocketChannel channel) {
+            channel.reader.injectBuffers(2, BUF_SIZE);
+            Pipeline pipeline = new Pipeline();
+            pipeline.setSource(channel.reader).setSink(channel.writer);
             pipeline.start();
         }
     }
-
-    /** serves one client, echoing input packets
-     */
-	class EchoPipeline extends Pipeline implements Callback<Object> {
-	    AsyncSocketChannel channel;
-	    
-        public EchoPipeline(AsyncSocketChannel channel) {
-            this.channel=channel;
-            setSource(channel.reader).setSink(channel.writer);
-            super.getFuture().addListener(this);
-        }
-
-        @Override
-        public void post(Object message) {
-            reactor.free(channel);
-            channel=null;
-        }
-
-        @Override
-        public void postFailure(Throwable exc) {
-            exc.printStackTrace();
-            reactor.free(channel);
-            channel=null;
-        }
-	}
 
     public static void main(String[] args) throws Exception {
         System.out.println("classPath=" + System.getProperty("java.class.path"));

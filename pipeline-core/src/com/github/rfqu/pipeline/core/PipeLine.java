@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.DataflowVariable;
-import com.github.rfqu.df4j.core.ListenableFuture;
 
 /**
  * PipeLine p=new PipeLine();
@@ -19,41 +18,65 @@ import com.github.rfqu.df4j.core.ListenableFuture;
  * @author Alexei Kaigorodov
  *
  */
-public class Pipeline {
+public class Pipeline extends CompletableFuture<Object> {
+    Source<?> source;
+    Sink<?> sink;
     ArrayList<Bolt> nodes=new ArrayList<Bolt>();
     
-    CompletableFuture<Object> completer=new CompletableFuture<Object>(){
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            if (super.cancel(mayInterruptIfRunning)) {
-                stop();
-                return true;
-            }
-            return false;
+    @Override
+    public void post(Object m) {
+        try {
+            super.post(m);
+            stop();
+        } catch (IllegalStateException e) {
         }
-    };
+    }
 
-    public Bolt getSource() {
-        return nodes.get(0);
+    @Override
+    public void postFailure(Throwable newExc) {
+        try {
+            super.postFailure(newExc);
+            stop();
+        } catch (IllegalStateException e) {
+        }
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        if (super.cancel(mayInterruptIfRunning)) {
+            stop();
+            return true;
+        }
+        return false;
+    }
+
+    public Source<?> getSource() {
+        return source;
+    }
+    
+    public Sink<?> getSink() {
+        return sink;
     }
     
     public <O> Connector<O> setSource(Source<O> source) {
+        Pipeline.this.source=source;
         nodes.add(source);
-        source.setContext(completer);
+        source.setContext(this);
         return new Connector<O>(source);
     }
 
     public <T> void connect(Source<T> source, Sink<T> sink) {
         nodes.add(sink);
-        sink.setContext(completer);
+        sink.setContext(this);
         source.setSinkPort(sink.getInputPort());
         sink.setReturnPort(source.getReturnPort());
     }
 
-    public void start() {
+    public Pipeline start() {
         for (Bolt node: nodes) {
             node.start();
         }
+        return this;
     }
 
     public void stop() {
@@ -62,12 +85,13 @@ public class Pipeline {
         }
     }
 
-    public ListenableFuture<Object> getFuture() {
-        return completer;
+    public void close() {
+    	getSource().close();
     }
 
     public class Connector<I> {
-        Source<I> source;
+        protected Source<I> source;
+        
         public Connector(Source<I> source) {
             this.source = source;
         }
@@ -78,6 +102,7 @@ public class Pipeline {
         }
         
         public Pipeline setSink(Sink<I> sink) {
+            Pipeline.this.sink=sink;
             Pipeline.this.connect(source, sink);
             return Pipeline.this;
         }

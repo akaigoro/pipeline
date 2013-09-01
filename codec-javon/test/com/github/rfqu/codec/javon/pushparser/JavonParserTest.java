@@ -5,15 +5,30 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.github.rfqu.codec.javon.builder.impl.JavonPrinter;
 import com.github.rfqu.codec.javon.pushparser.JavonParser;
 import com.github.rfqu.codec.json.parser.ParseException;
 import com.github.rfqu.df4j.core.CompletableFuture;
-import com.github.rfqu.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.core.Pipeline;
+import com.github.rfqu.pipeline.util.CharBufSource;
 
 public class JavonParserTest {
+    JavonPrinter pr = new JavonPrinter();
+    JavonParser tp=new JavonParser(pr);
+    CharBufSource source = new CharBufSource();
+    CompletableFuture<Object> future;
+    
+    @Before
+    public void init() throws Exception {
+        new Pipeline()
+        .setSource(source)
+        .setSink(tp)
+        .start();
+        future = tp.getResult();
+    }
 
     @Test
     public void testObjN() throws Exception {
@@ -58,28 +73,20 @@ public class JavonParserTest {
              ,"D{\"z\":null,\"w\":1.0,\"ace\":[D]}[]");
     }
 
-    protected void check(String inp, String exp) throws IOException, Exception {
-        JavonPrinter pr = new JavonPrinter();
-        JavonParser tp=new JavonParser(pr);
-        StringChunkSource source = new StringChunkSource(tp);
-        CompletableFuture<Object> res = tp.getResult();
+    protected void check(String inp, String exp) throws InterruptedException, ExecutionException  {
         source.post(inp);
         source.close();
-        assertTrue(res.isDone());
-        String resS = res.get().toString();
+        assertTrue(future.isDone());
+        String resS = future.get().toString();
         assertEquals(exp, resS);
     }
 
     protected void checkN(String inp) throws IOException, Exception {
-        JavonPrinter pr = new JavonPrinter();
-        JavonParser tp=new JavonParser(pr);
-        StringChunkSource source = new StringChunkSource(tp);
-        CompletableFuture<Object> res = tp.getResult();
         source.post(inp);
         source.close();
-        assertTrue(res.isDone());
+        assertTrue(future.isDone());
         try {
-			res.get();
+			future.get();
 			fail("ExecutionException expected");
 		} catch (ExecutionException e) {
 			ParseException pe=(ParseException) e.getCause();

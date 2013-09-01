@@ -1,6 +1,8 @@
 package com.github.rfqu.codec.json.pushparser;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -9,28 +11,38 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.codec.json.builder.impl.JsonPrinter;
-import com.github.rfqu.codec.json.parser.ParseException;
-import com.github.rfqu.codec.json.pushparser.JsonParser;
-import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.DFContext;
+import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
-import com.github.rfqu.pipeline.util.StringChunkSource;
+import com.github.rfqu.pipeline.core.Pipeline;
+import com.github.rfqu.pipeline.util.CharBufSource;
 
 //import static com.github.rfqu.codec.json.asyncparser.Scanner.*;
 
 public class JsonParserTest {
     @BeforeClass
-    public static void init() {
+    public static void initClass() {
         DFContext.setCurrentExecutor(new ImmediateExecutor());
+    }
+    
+    public Pipeline init() throws Exception {
+        JsonPrinter pr = new JsonPrinter();
+        JsonParser tp=new JsonParser(pr);
+        CharBufSource source = new CharBufSource();
+        
+        return new Pipeline()
+        .setSource(source)
+        .setSink(tp)
+        .start();
     }
 
     @Test
     public void testN() throws Exception {
  //       checkN("[] {}"); Not sure it must be an error
 
+        checkN("1");
         checkN("a");
         checkN("null");
-        checkN("1");
         checkN("[1,2,3");
     }
     
@@ -53,14 +65,13 @@ public class JsonParserTest {
     }
 
     protected void check(String inp, String exp) throws IOException, Exception {
-        JsonPrinter pr = new JsonPrinter();
-        JsonParser tp = new JsonParser(pr);
-        StringChunkSource source = new StringChunkSource(tp);
-        CompletableFuture<Object> res = tp.getResult();
-        source.post(inp);
+    	Pipeline pp=init();
+    	CharBufSource source=(CharBufSource)pp.getSource();
+        ListenableFuture<Object> future = pp.getFuture();
+    	source.post(inp);
         source.close();
-        assertTrue(res.isDone());
-        String resS = res.get().toString();
+		assertTrue(future.isDone());
+        String resS = future.get().toString();
         assertEquals(exp, resS);
     }
 
@@ -69,18 +80,19 @@ public class JsonParserTest {
     }
 
     protected void checkN(String inp) throws IOException, Exception {
-        JsonPrinter pr = new JsonPrinter();
-        JsonParser tp = new JsonParser(pr);
-        StringChunkSource source = new StringChunkSource(tp);
-        CompletableFuture<Object> res = tp.getResult();
+    	Pipeline pp=init();
+    	CharBufSource source=(CharBufSource)pp.getSource();
+        ListenableFuture<Object> future = pp.getFuture();
+        
         source.post(inp);
         source.close();
-        assertTrue(res.isDone());
+        assertTrue(future.isDone());
         try {
-			res.get();
+			future.get();
 			fail("ExecutionException expected");
 		} catch (ExecutionException e) {
-			ParseException pe=(ParseException) e.getCause();
+//			ParseException pe=(ParseException) e.getCause();
+			Throwable pe=e.getCause();
 			System.out.println(pe.getMessage());
 		}
     }

@@ -12,33 +12,16 @@ package com.github.rfqu.codec.json.pushparser;
 import java.nio.CharBuffer;
 
 import com.github.rfqu.codec.json.parser.ParseException;
-import com.github.rfqu.df4j.core.ActorPort;
-import com.github.rfqu.pipeline.core.ActorBolt;
+import com.github.rfqu.df4j.core.StreamPort;
+import com.github.rfqu.pipeline.core.SinkNode;
 
-public class Scanner extends ActorBolt<CharBuffer, Void> {
+public abstract class Scanner extends SinkNode<CharBuffer> {
     public static final char LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
             , SPACE=' ', TAB='\t', NEWL='\n', QUOTE='"', QUOTE2='\'', COMMENT='#'
             , EOF=0
             , NUMBER=EOF+1, IDENT=NUMBER+1, STRING=IDENT+1;
     
-    protected static String token2Str(int t) {
-        switch(t) {
-        case SPACE: return "<SPACE>";
-        case TAB: return "<TAB>";
-        case NEWL: return "<\n>";
-        case QUOTE: return "<\\\">";
-        case QUOTE2: return "<'>";
-        case COMMENT: return "#";
-        case EOF: return "<EOF>";
-        case IDENT: return "<IDENTIFIER>";
-        case STRING: return "<STRING>";
-        default:
-           return String.valueOf((char)t);
-        }
-    }
-
-    final InpCharIterator inp=new InpCharIterator();
     private CharRingBuffer charBuffer=new CharRingBuffer();
     private boolean newLineSeen=false;
     
@@ -47,53 +30,39 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
     private NumScanner numScanner=new NumScanner();
     private IdentScanner identScanner=new IdentScanner();
     private SubScanner subScanner=generalScanner;
-    private TokenPort tokenPort;
-    
-    public Scanner() {
-    }
-
-    public Scanner(TokenPort tokenPort) {
-        this.tokenPort = tokenPort;
-    }
 
     @Override
-    protected void transform() {
-        int ch;
-        for (;;) {
-            if (inp.isClosed()) {
-                subScanner.postChar(EOF);
-                return;
-            }
-//            CharBuffer chars=inp.getCurrentBuffer();
-            ch=inp.currentChar();
-/*
-            if (newLineSeen) {
-                newLineSeen=false;
-                charBuffer.startLine();
-            }
-            */
-            switch (ch) {
-                case -1:
-                    return;
-                case NEWL:
-                    // if this chracter will cause error,
-                    // diagnostics should include current line
-                    // so postpone sitching to another line for next character
-                    newLineSeen=true;
-                    subScanner.postChar((char) ch);
-                    break;
-                default:
-                    charBuffer.putChar((char) ch);
-                    subScanner.postChar((char) ch);
-            }
-            if (!inp.moveNextChar()) {
-                return;
-            }
+    protected void act(CharBuffer inbuf) {
+        while (inbuf.hasRemaining()) {
+            char c = inbuf.get();
+            scan(c);
         }
     }
 
-    public void setTokenPort(TokenPort tp) {
-        tokenPort=tp;
+    @Override
+    protected void complete() {
+        scan(EOF);
+    }
+
+    protected void scan(char ch) {
+        /*
+        if (newLineSeen) {
+            newLineSeen=false;
+            charBuffer.startLine();
+        }
+        */
+        switch (ch) {
+            case NEWL:
+                // if this chracter will cause error,
+                // diagnostics should include current line
+                // so postpone switching to another line for next character
+                newLineSeen=true;
+                subScanner.postChar(ch);
+                break;
+            default:
+                charBuffer.putChar(ch);
+                subScanner.postChar(ch);
+        }
     }
 
     protected ParseException toParseException(Throwable e) {
@@ -109,17 +78,25 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
         ee.setStackTrace(stackTrace);
         return ee;
     }
+
+    public abstract void postToken(char tokenType, String tokenString);
     
+    public void postParseError(String message) {
+        setParseError(new ParseException(message));
+    }
+    
+    public abstract void setParseError(Throwable e);
+
     abstract class SubScanner {
         private StringBuilder sb=new StringBuilder();
 
         /**
-         * posts token with string
+         * posts token with string from string builder
          * @param tokenType
          */
         final void postToken(char tokenType) {
             String str=sb.toString();
-            tokenPort.postToken(tokenType, str);
+            Scanner.this.postToken(tokenType, str);
             sb.delete(0, str.length());
             subScanner=generalScanner;
         }
@@ -145,11 +122,11 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
             switch (cch) {
             case LPAREN: case RPAREN:
             case LBRACE: case RBRACE: case LBRACKET:
-            case RBRACKET: case COMMA: case COLON:
+            case RBRACKET: case COMMA: case COLON: case EOF:
                 charBuffer.markTokenPosition();
-                tokenPort.postToken(cch, null);
+                Scanner.this.postToken(cch, null);
                 return;
-            case SPACE: case TAB:   case NEWL:
+            case SPACE: case TAB: case NEWL:
                 return;
             case QUOTE:
             case QUOTE2:
@@ -164,7 +141,7 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
                     return;
                 } else {
                     charBuffer.markTokenPosition();
-                    tokenPort.postParseError("unexpected character:'"+cch+"'");
+                    postParseError("unexpected character:'"+cch+"'");
                 }
             } // end switch
         }
@@ -189,7 +166,7 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
             if (cch==quoteSymbol) {
                 postToken(STRING);
             } else if (cch==EOF) {
-                tokenPort.postParseError("unexpected end of file");
+                postParseError("unexpected end of file");
             } else {
                 append(cch);
             }
@@ -235,12 +212,12 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
         @Override
         void postChar(char cch) {
             switch (cch) {
-//            case EOF:
             case LPAREN: case RPAREN:
             case LBRACE: case RBRACE: case LBRACKET:
             case RBRACKET: case COMMA: case COLON:
             case SPACE: case TAB:   case NEWL:
             case COMMENT:
+            case EOF:
                 postToken(NUMBER);
                 subScanner.postChar(cch);
                 break;
@@ -250,9 +227,19 @@ public class Scanner extends ActorBolt<CharBuffer, Void> {
         }   
     }
 
-	@Override
-	public void setListener(ActorPort<Void> listener) {
-		// TODO Auto-generated method stub
-		
-	}
+    protected static String token2Str(int t) {
+        switch(t) {
+        case SPACE: return "<SPACE>";
+        case TAB: return "<TAB>";
+        case NEWL: return "<\n>";
+        case QUOTE: return "<\\\">";
+        case QUOTE2: return "<'>";
+        case COMMENT: return "#";
+        case EOF: return "<EOF>";
+        case IDENT: return "<IDENTIFIER>";
+        case STRING: return "<STRING>";
+        default:
+           return String.valueOf((char)t);
+        }
+    }
 }

@@ -2,14 +2,16 @@ package com.github.rfqu.pipeline.core;
 
 import static org.junit.Assert.*;
 
+import java.nio.CharBuffer;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.rfqu.df4j.core.DFContext;
-import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.ext.ImmediateExecutor;
+import com.github.rfqu.pipeline.core.Pipeline.Connector;
 import com.github.rfqu.pipeline.util.CharBufSink;
 import com.github.rfqu.pipeline.util.CharBufSource;
 
@@ -23,37 +25,34 @@ public class CharBufCopyTransformerTest {
 		DFContext.setCurrentExecutor(new ImmediateExecutor());
 	}
 	
-    void check1(Pipeline pipeLine) throws InterruptedException, ExecutionException {
-        CharBufSource source = (CharBufSource) pipeLine.getSource();
-        ListenableFuture<Object> future = pipeLine.getFuture();
+    void check1(CharBufSource source, LinkedBlockingQueue<String> res) throws InterruptedException {
         source.post("J");
         source.close();
-        assertTrue(future.isDone());
-        Object res = future.get();
-        assertEquals("J", res);
+        assertFalse(res.isEmpty());
+        assertEquals("J", res.take());
     }
 
-    void check(Pipeline pipeLine) throws InterruptedException, ExecutionException {
-        CharBufSource source = (CharBufSource) pipeLine.getSource();
-        ListenableFuture<Object> future = pipeLine.getFuture();
+    void check2(CharBufSource source, LinkedBlockingQueue<String> res) throws InterruptedException {
         source.post(string1);
         source.post(string2);
-        assertFalse(future.isDone());
+        source.post("\n");
+ //       assertFalse(res.isEmpty());
+        assertEquals(string3, res.take());
+        source.post(string1);
+        source.post(string2);
         source.close();
-        assertTrue(future.isDone());
-        assertEquals(string3, future.get());
+        assertFalse(res.isEmpty());
+        assertEquals(string3, res.take());
     }
 
-    void checkExc(Pipeline pipeLine) throws InterruptedException {
-        CharBufSource source = (CharBufSource) pipeLine.getSource();
-        ListenableFuture<Object> future = pipeLine.getFuture();
+    void checkExc(Pipeline pipeLine, CharBufSource source) throws InterruptedException {
         source.post("J");
-        assertFalse(future.isDone());
+        assertFalse(pipeLine.isDone());
         Throwable exc = new Throwable();
         source.postFailure(exc);
-        assertTrue(future.isDone());
+        assertTrue(pipeLine.isDone());
         try {
-            future.get();
+            pipeLine.get();
             fail("exception expected");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -62,10 +61,10 @@ public class CharBufCopyTransformerTest {
     }
 
 
-    public void test(PipelineGenerator pg) throws InterruptedException, ExecutionException {
-        check1(pg.make());
-        check(pg.make());
-        checkExc(pg.make());
+    public void test(PipelineGenerator0 pg) throws InterruptedException, ExecutionException {
+//        pg.make(); check1(pg.source, pg.sink.getOutput());
+        pg.make(); check2(pg.source, pg.sink.getOutput());
+        pg.make(); checkExc(pg.pipeline, pg.source);
     }
 
     // @Test
@@ -76,40 +75,48 @@ public class CharBufCopyTransformerTest {
 
     @Test
     public void test1() throws InterruptedException, ExecutionException {
-        PipelineGenerator generator = new PipelineGenerator1();
+        PipelineGenerator0 generator = new PipelineGenerator1();
         test(generator);
     }
 
     @Test
     public void test2() throws InterruptedException, ExecutionException {
-        PipelineGenerator generator = new PipelineGenerator2();
+        PipelineGenerator0 generator = new PipelineGenerator2();
         test(generator);
     }
 
-    abstract class PipelineGenerator {
-        abstract Pipeline make() throws InterruptedException, ExecutionException;
-    }
+    class PipelineGenerator0 {
+        Pipeline pipeline;
+        CharBufSource source;
+        CharBufSink sink;
 
-    class PipelineGenerator1 extends PipelineGenerator {
-        Pipeline make() throws InterruptedException, ExecutionException {
-            CharBufSource source = new CharBufSource();
-            CharBufCopyTransformer tf = new CharBufCopyTransformer(4);
-            CharBufSink sink = new CharBufSink();
-            Pipeline pipeline = new Pipeline();
-            pipeline.setSource(source).addTransformer(tf).setSink(sink).start();
-            return pipeline;
+        void make() throws InterruptedException, ExecutionException {
+            pipeline = new Pipeline();
+            source = new CharBufSource();
+            sink = new CharBufSink();
+            Connector<CharBuffer> connector = pipeline.setSource(source);
+            connector=add(connector);
+			connector.setSink(sink);
+            pipeline.start();
+        }
+        
+    	Connector<CharBuffer> add(Connector<CharBuffer> connector) throws InterruptedException, ExecutionException {
+    		return connector;
         }
     }
 
-    class PipelineGenerator2 extends PipelineGenerator {
-        Pipeline make() throws InterruptedException, ExecutionException {
-            CharBufSource source = new CharBufSource();
+    class PipelineGenerator1 extends PipelineGenerator0 {
+    	Connector<CharBuffer> add(Connector<CharBuffer> connector) throws InterruptedException, ExecutionException {
             CharBufCopyTransformer tf = new CharBufCopyTransformer(4);
-            CharBufCopyTransformer tf2 = new CharBufCopyTransformer(4);
-            CharBufSink sink = new CharBufSink();
-            Pipeline pipeline = new Pipeline();
-            pipeline.setSource(source).addTransformer(tf).addTransformer(tf2).setSink(sink).start();
-            return pipeline;
+    		return connector.addTransformer(tf);
+        }
+    }
+
+    class PipelineGenerator2 extends PipelineGenerator0 {
+    	Connector<CharBuffer> add(Connector<CharBuffer> connector) throws InterruptedException, ExecutionException {
+            CharBufCopyTransformer tf = new CharBufCopyTransformer(4);
+            CharBufCopyTransformer tf2 = new CharBufCopyTransformer(3);
+    		return connector.addTransformer(tf).addTransformer(tf2);
         }
     }
 }

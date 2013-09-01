@@ -8,7 +8,5 @@ package com.github.rfqu.pipeline.core;
  * @param <I> type of input messages
  * @param <O> type of output messages
  */
-public interface Transformer<I, O> 
-    extends Bolt, Sink<I>, Source<O>
-{
+public interface Transformer<I, O>  extends Sink<I>, Source<O> {
 }

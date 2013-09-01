@@ -16,7 +16,7 @@ public class CharBufCopyTransformer extends BufTransformer<CharBuffer, CharBuffe
         }
     }
 
-    protected CoderResult transform(CharBuffer inbuf, CharBuffer outbuf) {
+    protected CoderResult transformBuffers(CharBuffer inbuf, CharBuffer outbuf) {
         for (;;) {
             char ch = inbuf.get();
             outbuf.put(ch);
@@ -30,7 +30,7 @@ public class CharBufCopyTransformer extends BufTransformer<CharBuffer, CharBuffe
     }
     
     @Override
-    protected CoderResult complete(CharBuffer outbuf) {
+    protected CoderResult completeBuffer(CharBuffer outbuf) {
         if (outbuf!=null) {
             if (outbuf.position()>0) {
                 // send outbuf

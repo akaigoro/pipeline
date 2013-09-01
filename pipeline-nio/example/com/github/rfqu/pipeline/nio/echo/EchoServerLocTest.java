@@ -10,7 +10,7 @@ public class EchoServerLocTest {
     static PrintStream out=System.out;
     static PrintStream err=System.err;
 
-    EchoServerTest t=new EchoServerTest();
+    EchoClient t=new EchoClient();
 
     public void localTest(int maxConn, int numclients, int rounds) throws Exception  {
         EchoServer es = new EchoServer(t.iaddr, maxConn);
@@ -32,17 +32,17 @@ public class EchoServerLocTest {
 
     @Test
     public void lightTest() throws Exception, IOException, InterruptedException {
-    	localTest(2, 2,2);
+    	localTest(1, 2,2);
    }
 
     @Test
     public void mediumTest() throws Exception, IOException, InterruptedException {
-    	localTest(100, 100,200);
+    	localTest(30, 100,200);
    }
 
     @Test
     public void heavyTest() throws Exception, IOException, InterruptedException {
-    	localTest(500, 1000, 10);
+    	localTest(200, 1000, 10);
    }
 
 //    @Test
@@ -70,6 +70,6 @@ public class EchoServerLocTest {
         }
         EchoServerLocTest t=new EchoServerLocTest();
         t.t.iaddr = new InetSocketAddress(host, port);
-        t.heavyTest();
+        t.smokeTest();
     }
 }

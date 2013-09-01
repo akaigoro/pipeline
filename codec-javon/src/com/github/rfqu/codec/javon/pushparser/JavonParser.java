@@ -18,8 +18,6 @@ import com.github.rfqu.codec.json.builder.MapBuilder;
 import com.github.rfqu.codec.json.parser.ParseException;
 import com.github.rfqu.codec.json.pushparser.JsonParser;
 
-import static com.github.rfqu.codec.json.pushparser.Scanner.*;
-
 public class JavonParser extends JsonParser {
     JavonBulderFactory factory;
 
@@ -31,7 +29,6 @@ public class JavonParser extends JsonParser {
 
     protected void setCurrentParser(Parser tp) {
         currentParser=tp;
-        scanner.setTokenPort(tp);
     }
 
     protected void parseObject(String tokenString) {

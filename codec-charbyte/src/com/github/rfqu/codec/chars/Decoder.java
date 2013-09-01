@@ -29,7 +29,7 @@ class Decoder extends BufTransformer <ByteBuffer, CharBuffer> {
     }
 
 	@Override
-    protected CoderResult transform(ByteBuffer inBuf, CharBuffer outBuf) {
+    protected CoderResult transformBuffers(ByteBuffer inBuf, CharBuffer outBuf) {
         CoderResult cr=charSetDecoder.decode(inBuf, outBuf, false);
         if (!cr.isUnderflow() && !cr.isOverflow()) {
             try {
@@ -42,7 +42,7 @@ class Decoder extends BufTransformer <ByteBuffer, CharBuffer> {
 	}
 
     @Override
-    protected CoderResult complete(CharBuffer outBuf) {
+    protected CoderResult completeBuffer(CharBuffer outBuf) {
         CoderResult cr;
         if (!decoded) {
             cr=charSetDecoder.decode(emptyByteBuf, outBuf, true);

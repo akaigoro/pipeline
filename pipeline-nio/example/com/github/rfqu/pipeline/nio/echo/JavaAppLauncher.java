@@ -43,7 +43,7 @@ public class JavaAppLauncher extends Thread {
 		PrintStream err = System.err;
 		String javaHome = System.getProperty("java.home");
 		String java = javaHome + File.separator + "bin" + File.separator
-				+ "java"; // java
+				+ "javaw"; // java
 		out.println("java=" + java);
 		String classPath = System.getProperty("java.class.path");
 		out.println("classPath=" + classPath);

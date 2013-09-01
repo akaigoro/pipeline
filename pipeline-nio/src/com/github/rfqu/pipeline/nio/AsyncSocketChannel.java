@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -25,8 +24,6 @@ import java.util.concurrent.TimeUnit;
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.df4j.core.Port;
-import com.github.rfqu.df4j.core.StreamPort;
-import com.github.rfqu.df4j.ext.ImmediateExecutor;
 import com.github.rfqu.pipeline.core.SinkNode;
 import com.github.rfqu.pipeline.core.SourceNode;
 
@@ -54,8 +51,11 @@ public class AsyncSocketChannel {
 	public final Writer writer = new Writer();
 
     protected volatile AsynchronousSocketChannel channel;
+    
+    /** after closing, return itself to this port */
+    protected Port<AsyncSocketChannel> returnPort;
+    
     protected final ConnectionCompleter connEvent=new ConnectionCompleter();
-    protected final CompletableFuture<AsyncSocketChannel> closeEvent=new CompletableFuture<AsyncSocketChannel>();
     
     /**
      * for client-side socket
@@ -67,101 +67,93 @@ public class AsyncSocketChannel {
      * @throws IOException
      */
     public AsyncSocketChannel(SocketAddress addr) throws IOException {
-        AsynchronousChannelGroup acg=AsyncChannelCroup.getCurrentACGroup();
-        AsynchronousSocketChannel channel=AsynchronousSocketChannel.open(acg);
-        channel.connect(addr, channel, connEvent);
+        AsynchronousSocketChannel channel =
+        		AsynchronousSocketChannel.open(AsyncChannelCroup.getCurrentACGroup());
+    	this.channel=channel;
+        channel.connect(addr, null, connEvent);
     }
     
     /** for server-side connections
      * 
      * @param channel accepted connection
+     * @param returnPort 
      */
-    public AsyncSocketChannel(AsynchronousSocketChannel channel) {
-        connEvent.completed(null, channel);
+    public AsyncSocketChannel(AsynchronousSocketChannel channel, Port<AsyncSocketChannel> returnPort) {
+    	this.channel=channel;
+    	this.returnPort=returnPort;
+        connEvent.completed(null, null);
     }
     
     public void setTcpNoDelay(boolean on) throws IOException {
         channel.setOption(StandardSocketOptions.TCP_NODELAY, on);
     }
 
-    /** signals connection completion
-     *  @return same object as {@link connect }
-     */
-    public ListenableFuture<AsyncSocketChannel> getConnEvent() {
-        return connEvent;
-    }
-
-    /** signals connection closing */
-    public ListenableFuture<AsyncSocketChannel> getCloseEvent() {
-        return closeEvent;
-    }    
-    
-    public boolean isConnected() {
-        return getConnEvent().isDone();
-    }
-
-    public boolean isClosed() {
-        return getCloseEvent().isDone();
-    }
-    
-    // ================== StreamPort I/O interface 
+    public ListenableFuture<Void> getConnEvent() {
+		return connEvent;
+	}
 
     /** disallows subsequent posts of requests; already posted requests 
      * would be processed.
      * @throws IOException 
      */
-    public void close() {
-        try {
-            closeEvent.post(this);
-        } catch (IllegalStateException ok) {
+    public synchronized void close() {
+        AsynchronousSocketChannel locchannel;
+        Port<AsyncSocketChannel> locreturnPort;
+        synchronized (this) {
+            locchannel = channel;
+            channel=null;
+            locreturnPort = returnPort;
+            returnPort=null;
         }
-        try {
-            channel.close();
-        } catch (IOException e) {
+    	if (locchannel!=null) {
+            try {
+                locchannel.close();
+            } catch (IOException e) {
+            }
+    	}
+        if (locreturnPort!=null) {
+            locreturnPort.post(this);
         }
     }
 
+    public synchronized boolean isClosed() {
+        return channel==null;
+    }
+    
     //===================== inner classes
     
     /**
      * callback for connection completion
      * works both in client-side and server-side modes
      */
-    class ConnectionCompleter extends CompletableFuture<AsyncSocketChannel>
-         implements CompletionHandler<Void, AsynchronousSocketChannel>
+    class ConnectionCompleter extends CompletableFuture<Void>
+         implements CompletionHandler<Void, Void>
     {
         // ------------- CompletionHandler's backend
 
         @Override
-        public void completed(Void result, AsynchronousSocketChannel asc) {
-            channel=asc;
+        public void completed(Void result, Void asc) {
             reader.resume();
             writer.resume();
-            super.post(AsyncSocketChannel.this);
+            super.post(null);
         }
 
         /**
          * in server-side mode, channel==null
          */
         @Override
-        public void failed(Throwable exc, AsynchronousSocketChannel channel) {
+        public void failed(Throwable exc, Void channel) {
             super.postFailure(exc);
         } 
     }
     
-    class Reader extends SourceNode<ByteBuffer>
+    public class Reader extends SourceNode<ByteBuffer>
        implements CompletionHandler<Integer, ByteBuffer>
     {
         /** here output messages return */
         protected StreamInput<ByteBuffer> myOutput=new StreamInput<ByteBuffer>();
-
         protected Semafor channelAcc = new Semafor(); // channel accessible
-
-       long timeout=0;
-        
-        public Reader() {
-            super(new ImmediateExecutor());
-        }
+        long timeout=0;
 
         public void resume() {
             channelAcc.up();
@@ -172,7 +164,54 @@ public class AsyncSocketChannel {
             return myOutput;
         }
 
-        // ------------- CompletionHandler's backend
+        public void injectBuffers(int count, int bufLen) {
+            for (int k=0; k<count; k++) {
+            	ByteBuffer buf=ByteBuffer.allocate(bufLen);
+            	myOutput.post(buf);
+            }
+        }
+
+        @Override
+		public void close() {
+            AsyncSocketChannel.this.close();
+		}
+
+        //-------------------- channel accessible for reading
+
+		@Override
+        protected void act() {
+            if (isClosed()) {
+                postFailure(new AsynchronousCloseException());
+                return;
+            }
+            ByteBuffer buffer=myOutput.get();
+            buffer.clear();
+            if (timeout>0) {
+                channel.read(buffer,
+                        timeout, TimeUnit.MILLISECONDS, buffer, this);
+            } else {
+                channel.read(buffer, buffer, this);
+            }
+        }
+        
+        // ------------- reading finished
+
+        public void completed(Integer result, ByteBuffer buffer) {
+        	try {
+                if (result==-1) {
+                	sinkPort.close();
+                    AsyncSocketChannel.this.close();
+                } else {
+                    buffer.flip();
+                    sinkPort.post(buffer);
+                    // avoid data race, start next reading only after this reading is fully handled
+                    channelAcc.up();
+                }
+            } catch (Throwable e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
 
         public void failed(Throwable exc, ByteBuffer attach) {
             if (exc instanceof AsynchronousCloseException) {
@@ -181,86 +220,75 @@ public class AsyncSocketChannel {
                 channelAcc.up(); // let subsequent requests fail
                 postFailure(exc);
             }
-        }
-
-        //-------------------- Actor's backend
-
-        @Override
-        protected void act() {
-            ByteBuffer buffer=myOutput.get();
-            if (isClosed()) {
-                postFailure(new AsynchronousCloseException());
-                return;
-            }
-            if (timeout>0) {
-                channel.read(buffer,
-                        timeout, TimeUnit.MILLISECONDS, null, this);
-            } else {
-                channel.read(buffer, null, this);
-            }
-        }
-        
-        public void completed(Integer result, ByteBuffer buffer) {
-            channelAcc.up();
-            sinkPort.post(buffer);
         }
     }
     
     class Writer extends SinkNode<ByteBuffer>
        implements CompletionHandler<Integer, ByteBuffer>
     {
-        /**  here input messages arrive */
-        protected StreamInput<ByteBuffer> myInput=new StreamInput<ByteBuffer>(){
-            public void post(ByteBuffer buffer) {
-                if (isClosed()) {
-                    postFailure(new AsynchronousCloseException());
-                    return;
-                }
-                if (!buffer.hasRemaining()) {
-                    postFailure(new IllegalArgumentException());
-                    return;
-                }
-                super.post(buffer);
-            }
-        };
-        protected Semafor channelAcc = new Semafor(); // channel accessible
-        long timeout=0;
-
         public Writer() {
-            super(new ImmediateExecutor());
+            super();
+            // TODO Auto-generated constructor stub
         }
 
-        @Override
-        public StreamPort<ByteBuffer> getInputPort() {
-            return myInput;
-        }       
+        protected Semafor channelAcc = new Semafor(); // channel accessible
+        long timeout=0;
 
         public void resume() {
             channelAcc.up();
         }
 
-        //-------------------- Actor's backend
-
-        @Override
-        protected void act() {
-            ByteBuffer buffer=myInput.get();
-            write(buffer);
+        public void post(ByteBuffer buffer) {
+            if (isClosed()) {
+                postFailure(new AsynchronousCloseException());
+                return;
+            }
+            if (!buffer.hasRemaining()) {
+                postFailure(new IllegalArgumentException());
+                return;
+            }
+            super.post(buffer);
         }
-        
-        protected void write(ByteBuffer buffer) {
+
+        //-------------------- channel accessible for writing
+
+        protected void act(ByteBuffer buffer) {
             if (isClosed()) {
                 postFailure(new AsynchronousCloseException());
                 return;
             }
             if (timeout>0) {
                 channel.write(buffer,
-                        timeout, TimeUnit.MILLISECONDS, null, this);
+                        timeout, TimeUnit.MILLISECONDS, buffer, this);
             } else {
-                channel.write(buffer, null, this);
+                channel.write(buffer, buffer, this);
             }
         }
+
+        @Override
+        protected void complete() {
+            AsyncSocketChannel.this.close();
+        }
         
-        // ------------- CompletionHandler's backend
+        // ------------- writing finished
+
+        public void completed(Integer result, ByteBuffer buffer) {
+        	try {
+                if (result==-1) {
+                    free(buffer);
+                    AsyncSocketChannel.this.close();
+                } else if (buffer.hasRemaining()) {
+                	// write one more time
+                    act(buffer);
+                } else {
+                    free(buffer);
+                    channelAcc.up();
+                }
+            } catch (Throwable e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
 
         public void failed(Throwable exc, ByteBuffer attach) {
             if (exc instanceof AsynchronousCloseException) {
@@ -268,15 +296,6 @@ public class AsyncSocketChannel {
             } else {
                 channelAcc.up(); // let subsequent requests fail
                 postFailure(exc);
-            }
-        }
-
-        public void completed(Integer result, ByteBuffer buffer) {
-            if (buffer.hasRemaining()) {
-                write(buffer);
-            } else {
-                channelAcc.up();
-                free(buffer);
             }
         }
     }

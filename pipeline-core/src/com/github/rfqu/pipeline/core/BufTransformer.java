@@ -9,9 +9,6 @@ import com.github.rfqu.df4j.core.StreamPort;
 public abstract class BufTransformer<I extends Buffer, O extends Buffer>
     extends TransformerNode<I, O>
 {
-    /**  here input messages arrive */
-    protected StreamInput<I> myInput=new StreamInput<I>();
-
     /** here output messages return */
     protected StreamInput<O> myOutput=new StreamInput<O>();
 
@@ -21,34 +18,24 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
     public BufTransformer(Executor executor) {
         super(executor);
     }
-
-    @Override
-    public StreamPort<I> getInputPort() {
-        return myInput;
-    }
     
     @Override
     public StreamPort<O> getReturnPort() {
         return myOutput;
     }
-    
-    @Override
+
+	@Override
     protected void act() {
-        
-        I inbuf=myInput.get();
+        I inbuf=input.get();
         O outbuf=myOutput.get();
         outbuf.clear();
         // processing loop:
-        for (;;) {
-            if (inbuf==null) {
-                break;
-            }
-            
-            CoderResult res=transform(inbuf, outbuf);
+        while (inbuf!=null) {
+            CoderResult res=transformBuffers(inbuf, outbuf);
 
             if (res.isUnderflow()) {
                 free(inbuf);  // free inbuf
-                if (!myInput.moveNext()) {
+                if (!input.moveNext()) {
                     if (outbuf.position()==0) {
                         myOutput.pushback();
                     } else {
@@ -58,14 +45,14 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
                     }
                     return;
                 }
-                inbuf=myInput.get();
+                inbuf=input.get();
             }
             if (res.isOverflow()) {
                 // send outbuf
                 outbuf.flip();
                 sinkPort.post(outbuf);
                 if (!myOutput.moveNext()) {
-                    myInput.pushback();
+                    input.pushback();
                     return;
                 }
                 outbuf=myOutput.get();
@@ -74,26 +61,31 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
         }
         // completing loop
         for (;;) {
-            CoderResult res = complete(outbuf);
+            CoderResult res = completeBuffer(outbuf);
             if (res.isUnderflow()) {
-                // failed to complete
-                myInput.pushback();
-                // send outbuf
-                outbuf.flip();
-                sinkPort.post(outbuf);
-                if (!myOutput.moveNext()) {
-                    myInput.pushback();
-                    return;
-                }
-                outbuf=myOutput.get();
-                outbuf.clear();
+            	break;
             }
-            break;
+            // need more space to flush data
+            input.pushback();
+            // send outbuf
+            outbuf.flip();
+            sinkPort.post(outbuf);
+            if (!myOutput.moveNext()) {
+                input.pushback();
+                return;
+            }
+            outbuf=myOutput.get();
+            outbuf.clear();
         }
         sinkPort.close();
         // delete own buffers
         myOutput.close();
         while (myOutput.moveNext());
+    }
+
+    @Override
+    protected void act(I message) throws Exception {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -104,7 +96,7 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
      *    if UNDERFLOW is set, new inbuf required
      *    if OVERFLOW  is set, new outbuf required
      */
-    protected abstract CoderResult transform(I inbuf, O outbuf);
+    protected abstract CoderResult transformBuffers(I inbuf, O outbuf);
     
     
     /**
@@ -113,6 +105,6 @@ public abstract class BufTransformer<I extends Buffer, O extends Buffer>
      * @param outmessage 
      * @return 
      */
-    protected abstract CoderResult complete(O outbuf);
+    protected abstract CoderResult completeBuffer(O outbuf);
 
 }

@@ -1,12 +1,56 @@
 package com.github.rfqu.pipeline.nio.echo;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
 
+import org.junit.Test;
+
 /**
- * requires com.github.rfqu.df4j.ioexample.EchoServer to be launched as an application
+ * launches EchoServer as an application
  */
-public class EchoServerGlobTest extends EchoServerTest {
-	
+public class EchoServerGlobTest {//extends EchoServerTest {
+    static PrintStream out=System.out;
+    static PrintStream err=System.err;
+
+    EchoClient t=new EchoClient();
+
+    public void globTest(int maxConn, int numclients, int rounds) throws Exception  {
+        t.testThroughput(numclients, rounds);
+    }
+
+    @Test
+    public void smokeTest() throws Exception, IOException, InterruptedException {
+        t.testThroughput(1,1);
+   }
+    @Test
+    public void smokeTest1() throws Exception, IOException, InterruptedException {
+        t.testThroughput(1,2);
+   }
+//    @Test
+    public void smokeTest2() throws Exception, IOException, InterruptedException {
+        t.testThroughput(2,1);
+   }
+
+    @Test
+    public void lightTest() throws Exception, IOException, InterruptedException {
+        t.testThroughput(20,200);
+   }
+
+    @Test
+    public void mediumTest() throws Exception, IOException, InterruptedException {
+        t.testThroughput(100,100);
+   }
+
+    @Test
+    public void heavyTest() throws Exception, IOException, InterruptedException {
+        t.testThroughput(1000,10);
+   }
+
+//    @Test
+    public void veryHeavyTest() throws Exception, IOException, InterruptedException {
+        t.testThroughput(5000,20);
+   }	
     public static void main(String[] args) throws Exception {
         String host;
         if (args.length<1) {
@@ -25,9 +69,9 @@ public class EchoServerGlobTest extends EchoServerTest {
         final String name = EchoServer.class.getName();
         Process pr=JavaAppLauncher.startJavaApp(name,
                 Integer.toString(port));
-        EchoServerGlobTest t=new EchoServerGlobTest();
         Thread.sleep(500); // let echo server start
-        t.iaddr = new InetSocketAddress(host, port);
+        EchoServerGlobTest t=new EchoServerGlobTest();
+        t.t.iaddr = new InetSocketAddress(host, port);
         t.mediumTest();
         t.heavyTest();
         t.veryHeavyTest();
