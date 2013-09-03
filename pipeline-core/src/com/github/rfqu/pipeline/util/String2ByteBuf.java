@@ -13,6 +13,16 @@ public class String2ByteBuf extends TransformerNode<String, ByteBuffer>
     /** there output messages go */
     protected StreamPort<ByteBuffer> sinkPort;
     
+    protected final String charset;
+    
+    public String2ByteBuf() {
+    	this("UTF8");
+    }
+    
+    public String2ByteBuf(String charset) {
+    	this.charset = charset;
+    }
+    
     public void setSinkPort(StreamPort<ByteBuffer> sinkPort) {
         this.sinkPort=sinkPort;
     }
@@ -23,7 +33,7 @@ public class String2ByteBuf extends TransformerNode<String, ByteBuffer>
 
 	public void post(String s) {
 		try {
-			byte[] data = s.getBytes("UTF8");
+			byte[] data = s.getBytes(charset);
 			ByteBuffer buf=ByteBuffer.wrap(data);
 	        sinkPort.post(buf);
 		} catch (UnsupportedEncodingException e) {
@@ -46,7 +56,7 @@ public class String2ByteBuf extends TransformerNode<String, ByteBuffer>
     protected void act(String message) throws Exception {
         String str=input.get();
         try {
-            byte[] array=str.getBytes("UTF8");
+            byte[] array=str.getBytes(charset);
             ByteBuffer buf=ByteBuffer.wrap(array);
             sinkPort.post(buf);
         } catch (UnsupportedEncodingException e) {
