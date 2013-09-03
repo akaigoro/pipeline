@@ -26,7 +26,7 @@ public class CharBufSink extends SinkNode<CharBuffer> {
     
     //--------------- Dataflow backend
     
-    StringBuilder sb=new StringBuilder();
+    private StringBuilder sb=new StringBuilder();
 
     void formString() {
         String s=sb.toString();
