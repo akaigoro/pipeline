@@ -14,37 +14,40 @@ Source<T1> => Transformer<T1,T2> => Transformer<T2,T3> => Sink<T3>
 All nodes in the pipeline can perform in parallel,
 provided that they are created with parallel-capable Executor.
  
-All subprojects rely on [df4j-core](../df4j-core) project.
+All subprojects rely on [df4j-core](https://github.com/rfqu/df4j/tree/master/df4j-core) project.
 
 Subprojects:
 ------------
 
 pipeline-core: basic implementations of Source and Sync interfaces. 
--------------
+
 pipeline-nio: asyncronous network I/O, based on NIO2, provides two basic classes:
--------------
-AsyncSocketChannel represents a network connection and contains 2 objects:
+
+ - AsyncSocketChannel represents a network connection and contains 2 objects:
 Source<ByteBuffer> reader - to be used as the first node in a network-connected pipeline 
 Sink<ByteBuffer> writer - to be used as the last node in a network-connected pipeline 
 
 It can be used both on client and server sides.
 
-
-AsyncServerSocketChannel - implements Source<AsyncSocketChannel>
+ - AsyncServerSocketChannel - implements Source<AsyncSocketChannel>
 generates accepted connections to clients on server side.
 
-codec* projects provide popular coding and encoding procedures.
+codec* projects
+---------------
+
+provide popular coding and encoding procedures.
 All codecs can be used in asynchronous (push) way, and sone also in synchronous (pull) way.
-------
+
 codec-charbyte: coding and decoding streams of character buffers in/from streams of byte buffers.
--------------
+
 codec-json: reads and writes JSON files
--------------
+
 codec-javon: reads and writes Javon files. Javon ia an extension to JSON,
-addint true java-like objects, while JSON objects still are converted to java.util.Maps.
--------------
-codec-xml: planned.
--------------
+adding true java-like objects, while JSON objects still are converted to java.util.Maps.
+
+codec-xml
+---------
+in progress
 
 Motivation
 ----------

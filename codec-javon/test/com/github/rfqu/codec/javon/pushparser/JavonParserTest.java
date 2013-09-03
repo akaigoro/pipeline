@@ -23,11 +23,10 @@ public class JavonParserTest {
     
     @Before
     public void init() throws Exception {
-        new Pipeline()
+        future=new Pipeline()
         .setSource(source)
         .setSink(tp)
         .start();
-        future = tp.getResult();
     }
 
     @Test
