@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.github.rfqu.df4j.core.Actor;
-import com.github.rfqu.df4j.core.Callback;
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.df4j.core.Timer;
 import com.github.rfqu.df4j.testutil.DoubleValue;
@@ -48,8 +47,8 @@ public class EchoClient {
         for (int i = 0; i < numclients; i++) {
             ClientConnection cconn = new ClientConnection(iaddr, rounds);
 			clients.put(cconn.id, cconn);
+            cconn.setListener(sink);
 			cconn.start();
-            cconn.inbound.addListener((Callback) sink);
         }
         out.println("Started clients:"+numclients);
         double avgLatency=sink.avg.get();

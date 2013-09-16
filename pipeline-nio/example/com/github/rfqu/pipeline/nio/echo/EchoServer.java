@@ -16,7 +16,7 @@ import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
 */
 public class EchoServer implements Closeable {
     public static final int defaultPort = 8007;
-    public static final int BUF_SIZE = 128;
+    public static final int BUF_SIZE = 64;
 
     AsyncServerSocketChannel assch;
     Reactor reactor=new Reactor();
@@ -74,11 +74,12 @@ public class EchoServer implements Closeable {
         }
         SocketAddress addr = new InetSocketAddress("localhost", port);
 		
+        System.out.println("EchoServer at "+addr+" started");
         EchoServer es = new EchoServer(addr, maxConn);
 		ListenableFuture<Object> future = es.start();
         future.get();
 
         // inet addr is free now
-        System.out.println("EchoServer started");
+        System.out.println("EchoServer finished");
     }
 }

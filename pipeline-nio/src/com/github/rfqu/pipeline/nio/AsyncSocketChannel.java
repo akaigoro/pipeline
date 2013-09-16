@@ -176,7 +176,7 @@ public class AsyncSocketChannel {
             AsyncSocketChannel.this.close();
 		}
 
-        //-------------------- channel accessible for reading
+        //-------------------- start reading
 
 		@Override
         protected void act() {
@@ -204,7 +204,7 @@ public class AsyncSocketChannel {
                 } else {
                     buffer.flip();
                     sinkPort.post(buffer);
-                    // avoid data race, start next reading only after this reading is fully handled
+                    // start next reading only after this reading is fully handled
                     channelAcc.up();
                 }
             } catch (Throwable e) {
@@ -226,11 +226,6 @@ public class AsyncSocketChannel {
     class Writer extends SinkNode<ByteBuffer>
        implements CompletionHandler<Integer, ByteBuffer>
     {
-        public Writer() {
-            super();
-            // TODO Auto-generated constructor stub
-        }
-
         protected Semafor channelAcc = new Semafor(); // channel accessible
         long timeout=0;
 
@@ -243,14 +238,10 @@ public class AsyncSocketChannel {
                 postFailure(new AsynchronousCloseException());
                 return;
             }
-            if (!buffer.hasRemaining()) {
-                postFailure(new IllegalArgumentException());
-                return;
-            }
             super.post(buffer);
         }
 
-        //-------------------- channel accessible for writing
+        //-------------------- start writing
 
         protected void act(ByteBuffer buffer) {
             if (isClosed()) {

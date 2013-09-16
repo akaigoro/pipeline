@@ -1,6 +1,5 @@
 package com.github.rfqu.pipeline.core;
 
-import com.github.rfqu.df4j.core.Callback;
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.df4j.core.StreamPort;
 
@@ -9,23 +8,7 @@ import com.github.rfqu.df4j.core.StreamPort;
  * 
  * Left connection should be estatblished before right one
  */
-public class CopyTransformer<IO> implements Transformer<IO, IO> {
-
-    //------------------ Bolt part
-    protected Callback<Object> context;
-
-
-    @Override
-    public void setContext(Callback<Object> context) {
-        this.context = context;
-    }
-
-    public void start() {
-    }
-
-    public void stop() {
-    }
-
+public class CopyTransformer<IO> extends BoltBase implements Transformer<IO, IO> {
     //----------------- Sink part
     
     /**  here input messages arrive */
@@ -84,7 +67,6 @@ public class CopyTransformer<IO> implements Transformer<IO, IO> {
         return myReturnPort;
     }
 	
-    @Override
 	public void close() {
     	myInputPort.close();
 	}
