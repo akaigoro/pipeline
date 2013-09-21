@@ -17,7 +17,7 @@ import com.github.rfqu.codec.javon.builder.ObjectBuilder;
 import com.github.rfqu.codec.json.builder.*;
 import com.github.rfqu.codec.json.builder.impl.JsonList;
 import com.github.rfqu.codec.json.builder.impl.JsonMap;
-import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.codec.scanner.ParseException;
 
 public class JavonBuilder extends ClassMap implements JavonBulderFactory {
 

@@ -21,6 +21,7 @@ import java.io.StringReader;
 import com.github.rfqu.codec.json.builder.JsonBulderFactory;
 import com.github.rfqu.codec.json.builder.ListBuilder;
 import com.github.rfqu.codec.json.builder.MapBuilder;
+import com.github.rfqu.codec.scanner.ParseException;
 
 /** at least one of following methods should be overriden:
  * newRootObject(),

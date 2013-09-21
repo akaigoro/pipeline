@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import com.github.rfqu.codec.javon.builder.impl.JavonPrinter;
 import com.github.rfqu.codec.javon.pushparser.JavonParser;
-import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.codec.scanner.ParseException;
 import com.github.rfqu.df4j.core.CompletableFuture;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.util.CharBufSource;

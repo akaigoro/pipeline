@@ -12,9 +12,9 @@ package com.github.rfqu.codec.json.pushparser;
 import com.github.rfqu.codec.json.builder.JsonBulderFactory;
 import com.github.rfqu.codec.json.builder.ListBuilder;
 import com.github.rfqu.codec.json.builder.MapBuilder;
-import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.codec.scanner.ParseException;
 
-public class JsonParser extends Scanner {
+public class JsonParser extends JsonScanner {
     protected final JsonBulderFactory factory;
     protected Parser currentParser;
 

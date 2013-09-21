@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import com.github.rfqu.codec.javon.builder.JavonBulderFactory;
 import com.github.rfqu.codec.javon.builder.ObjectBuilder;
 import com.github.rfqu.codec.json.parser.JsonParser;
-import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.codec.scanner.ParseException;
 
 /** at least one of following methods should be overriden:
  * newRootObject(),

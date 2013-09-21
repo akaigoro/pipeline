@@ -10,7 +10,7 @@
 package com.github.rfqu.codec.javon.builder;
 
 import com.github.rfqu.codec.json.builder.*;
-import com.github.rfqu.codec.json.parser.ParseException;
+import com.github.rfqu.codec.scanner.ParseException;
 
 public interface ObjectBuilder extends StructBuilder {
     public void instatntiate() throws Exception;

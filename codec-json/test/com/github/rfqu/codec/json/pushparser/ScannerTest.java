@@ -1,14 +1,14 @@
 package com.github.rfqu.codec.json.pushparser;
 
-import static com.github.rfqu.codec.json.pushparser.Scanner.COLON;
-import static com.github.rfqu.codec.json.pushparser.Scanner.COMMA;
-import static com.github.rfqu.codec.json.pushparser.Scanner.IDENT;
-import static com.github.rfqu.codec.json.pushparser.Scanner.LBRACE;
-import static com.github.rfqu.codec.json.pushparser.Scanner.LBRACKET;
-import static com.github.rfqu.codec.json.pushparser.Scanner.NUMBER;
-import static com.github.rfqu.codec.json.pushparser.Scanner.RBRACE;
-import static com.github.rfqu.codec.json.pushparser.Scanner.RBRACKET;
-import static com.github.rfqu.codec.json.pushparser.Scanner.STRING;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.COLON;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.COMMA;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.IDENT;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.LBRACE;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.LBRACKET;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.NUMBER;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.RBRACE;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.RBRACKET;
+import static com.github.rfqu.codec.json.pushparser.JsonScanner.STRING;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -76,12 +76,12 @@ public class ScannerTest {
         check(inp, inp, tokens);
     }
 
-    class MyTokenPort extends Scanner {
+    class MyTokenPort extends JsonScanner {
         StringBuilder sb=new StringBuilder();
         ArrayList<Character> types=new ArrayList<Character>(); 
 
         @Override
-        public void postToken(char tokenType, String tokenString) {
+        public void postToken(char tokenType, CharSequence tokenString) {
             if (tokenType==NEWL) return;
             types.add(tokenType);
             if (tokenString==null) {

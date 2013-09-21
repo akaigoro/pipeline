@@ -13,6 +13,8 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 
+import com.github.rfqu.codec.scanner.ParseException;
+
 public class Scanner {
     protected static final int LPAREN='(', RPAREN=')', LBRACE='{', RBRACE='}'
             , LBRACKET='[', RBRACKET=']', COMMA=',', COLON=':'
