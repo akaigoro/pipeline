@@ -18,7 +18,6 @@ import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.SinkNode;
 import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
 import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
-import com.github.rfqu.pipeline.util.Connection;
 
 public  class EchoTest {
     static final int BUF_SIZE = 128;
@@ -30,7 +29,7 @@ public  class EchoTest {
     }
 
     AsyncServerSocketChannel assc; 
-    Connection clientConn;
+    ClientConnection clientConn;
         
     @Before
     public void init() throws IOException, InterruptedException, ExecutionException, TimeoutException {
@@ -39,7 +38,7 @@ public  class EchoTest {
         acceptor.setSource(assc).setSink(new Reactor()).start();
         
         AsyncSocketChannel client=new AsyncSocketChannel(local9990);
-        clientConn=new Connection(client);
+        clientConn=new ClientConnection(client);
         clientConn.start();
     }
 
@@ -85,8 +84,8 @@ public  class EchoTest {
     }
     
     public static void main(String[] args) {
-        ConnectionTest ct = new ConnectionTest();
-        ConnectionTest.initClass();
+        EchoTest ct = new EchoTest();
+        EchoTest.initClass();
         try {
             ct.init();
             ct.smokeIOTest();

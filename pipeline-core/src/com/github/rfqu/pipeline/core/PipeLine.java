@@ -58,20 +58,6 @@ public class Pipeline extends CompletableFuture<Object> {
         return sink;
     }
     
-    public <O> Connector<O> setSource(Source<O> source) {
-        Pipeline.this.source=source;
-        nodes.add(source);
-        source.setContext(this);
-        return new Connector<O>(source);
-    }
-
-    public <T> void connect(Source<T> source, Sink<T> sink) {
-        nodes.add(sink);
-        sink.setContext(this);
-        source.setSinkPort(sink.getInputPort());
-        sink.setReturnPort(source.getReturnPort());
-    }
-
     public Pipeline start() {
         for (Bolt node: nodes) {
             node.start();
@@ -89,6 +75,26 @@ public class Pipeline extends CompletableFuture<Object> {
     	getSource().close();
     }
 
+    public <O> Connector<O> setSource(Source<O> newSource) {
+        if (source==null) {
+            source=newSource; // only first source set
+        } else if (sink==null) {
+            throw new IllegalStateException("previous chain not finished");
+        } else {
+            sink=null;
+        }
+        nodes.add(newSource);
+        newSource.setContext(this);
+        return new Connector<O>(newSource);
+    }
+
+    public <T> void connect(Source<T> source, Sink<T> sink) {
+        nodes.add(sink);
+        sink.setContext(this);
+        source.setSinkPort(sink.getInputPort());
+        sink.setReturnPort(source.getReturnPort());
+    }
+
     public class Connector<I> {
         protected Source<I> source;
         
@@ -97,13 +103,25 @@ public class Pipeline extends CompletableFuture<Object> {
         }
         
         public <O> Connector<O> addTransformer(Transformer<I,O> tr) {
+            if (source==null) {
+                throw new IllegalStateException("chain not started");
+            }
+            if (sink!=null) {
+                throw new IllegalStateException("chain finished");
+            }
             Pipeline.this.connect(source, tr);
             return new Connector<O>(tr);
         }
         
-        public Pipeline setSink(Sink<I> sink) {
-            Pipeline.this.sink=sink;
-            Pipeline.this.connect(source, sink);
+        public Pipeline setSink(Sink<I> newSink) {
+            if (source==null) {
+                throw new IllegalStateException("chain not started");
+            }
+            if (sink!=null) {
+                throw new IllegalStateException("chain already finished");
+            }
+            sink=newSink;
+            connect(source, newSink);
             return Pipeline.this;
         }
     }

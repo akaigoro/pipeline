@@ -18,7 +18,6 @@ import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.SinkNode;
 import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
 import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
-import com.github.rfqu.pipeline.util.Connection;
 
 public  class ConnectionTest {
     static final int BUF_SIZE = 128;
@@ -30,8 +29,8 @@ public  class ConnectionTest {
     }
 
     AsyncServerSocketChannel assc; 
-    Connection serverConn;
-    Connection clientConn;
+    ClientConnection serverConn;
+    ClientConnection clientConn;
         
     @Before
     public void init() throws IOException, InterruptedException, ExecutionException, TimeoutException {
@@ -40,10 +39,10 @@ public  class ConnectionTest {
         acceptor.setSource(assc).setSink(new Reactor()).start();
         
     	AsyncSocketChannel client=new AsyncSocketChannel(local9990);
-    	clientConn=new Connection(client);
+    	clientConn=new ClientConnection(client);
     	clientConn.start();
     	
-    	serverConn=(Connection) acceptor.get();//(1000);
+    	serverConn=(ClientConnection) acceptor.get();//(1000);
     }
 
     @After
@@ -109,9 +108,9 @@ public  class ConnectionTest {
         
         @Override
         protected void act(AsyncSocketChannel channel) {
-            Connection connection;
+            ClientConnection connection;
             try {
-                connection = new Connection(channel);
+                connection = new ClientConnection(channel);
             } catch (IOException e) {
                 throw new RuntimeException();
             }

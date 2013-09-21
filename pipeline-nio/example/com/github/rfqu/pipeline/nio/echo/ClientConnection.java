@@ -15,7 +15,6 @@ import com.github.rfqu.pipeline.core.BoltBase;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.Transformer;
 import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
-import com.github.rfqu.pipeline.nio.echo.EchoClient.Aggregator;
 
 /**
  * Implements a client of Echo-server.
@@ -33,7 +32,6 @@ class ClientConnection extends Pipeline {
     public int id = EchoClient.ids.addAndGet(1);
     Client client=new Client();
     AtomicInteger rounds;
-    Aggregator aggregator;
 
     public ClientConnection(InetSocketAddress addr, int rounds) throws IOException {
         AsyncSocketChannel channel=new AsyncSocketChannel(addr);
@@ -43,11 +41,6 @@ class ClientConnection extends Pipeline {
           .setSink(channel.writer);
     }
    
-    public void setListener(Aggregator aggregator) {
-        this.aggregator=aggregator;
-    }
-   
-    
     class Client extends BoltBase implements Transformer<ByteBuffer, ByteBuffer> {
         Random rand = new Random();
         long sum = 0;
@@ -91,13 +84,11 @@ class ClientConnection extends Pipeline {
                 long r = rounds.decrementAndGet();
                 if (r == 0) {
                     // System.out.println("SocketByteBufferRequest finished id="+id);
-                    Client.this.close();
                     DoubleValue avg = new DoubleValue(((double) sum) / count3endRead);
-                    aggregator.post(avg);
+                    ClientConnection.this.post(avg);
                     // System.out.println("clients="+echoServerTest.clients.size());
                     return;
                 }
-                buf.clear();
                 write(rand.nextLong(), buf);
             }
 
@@ -140,7 +131,9 @@ class ClientConnection extends Pipeline {
 
         public void write(long value, ByteBuffer buf) {
             count1startWrite++;
+            buf.clear();
             buf.putLong(value);
+            buf.flip();
             lastMessage = value;
             writeTime = System.currentTimeMillis();
             sinkPort.post(buf);

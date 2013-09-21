@@ -4,13 +4,21 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.github.rfqu.df4j.core.DFContext;
 
 public class EchoServerLocTest {
     static PrintStream out=System.out;
     static PrintStream err=System.err;
 
     EchoClient t=new EchoClient();
+
+    @BeforeClass
+    public static void initClass() {
+        DFContext.setSingleThreadExecutor();
+    }
 
     public void localTest(int maxConn, int numclients, int rounds) throws Exception  {
         EchoServer es = new EchoServer(t.iaddr, maxConn);
@@ -28,19 +36,19 @@ public class EchoServerLocTest {
     @Test
     public void smokeTest() throws Exception, IOException, InterruptedException {
     	localTest(1, 1,1);
-   }
+    }
 
     @Test
     public void lightTest() throws Exception, IOException, InterruptedException {
-    	localTest(1, 2,2);
-   }
-
+    	localTest(1, 2,1);
+     }
+ 
     @Test
     public void mediumTest() throws Exception, IOException, InterruptedException {
     	localTest(30, 100,200);
    }
 
-    @Test
+//    @Test
     public void heavyTest() throws Exception, IOException, InterruptedException {
     	localTest(200, 1000, 10);
    }
@@ -49,9 +57,6 @@ public class EchoServerLocTest {
     public void veryHeavyTest() throws Exception, IOException, InterruptedException {
     	localTest(2000, 2500, 100);
    }
-
-    public void run(String[] args) throws Exception {
-    }
 
     public static void main(String[] args) throws IOException, InterruptedException, Exception {
         String host;

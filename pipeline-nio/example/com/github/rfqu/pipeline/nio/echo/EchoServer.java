@@ -16,7 +16,7 @@ import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
 */
 public class EchoServer implements Closeable {
     public static final int defaultPort = 8007;
-    public static final int BUF_SIZE = 64;
+    public static final int BUF_SIZE = 8;//64;
 
     AsyncServerSocketChannel assch;
     Reactor reactor=new Reactor();
@@ -45,7 +45,7 @@ public class EchoServer implements Closeable {
      * accepted connections, formatted as {@link AsyncSocketChannel}, arrive to {@link myInput}.
      * For each connection, echoing pipline is created.
      */
-    class Reactor extends SinkNode<AsyncSocketChannel> {
+    static class Reactor extends SinkNode<AsyncSocketChannel> {
 
         /** creates a pipeline which serves one client, echoing input packets
          */

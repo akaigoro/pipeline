@@ -129,8 +129,6 @@ public class AsyncSocketChannel {
     class ConnectionCompleter extends CompletableFuture<Void>
          implements CompletionHandler<Void, Void>
     {
-        // ------------- CompletionHandler's backend
-
         @Override
         public void completed(Void result, Void asc) {
             reader.resume();
@@ -138,9 +136,6 @@ public class AsyncSocketChannel {
             super.post(null);
         }
 
-        /**
-         * in server-side mode, channel==null
-         */
         @Override
         public void failed(Throwable exc, Void channel) {
             super.postFailure(exc);
@@ -197,19 +192,15 @@ public class AsyncSocketChannel {
         // ------------- reading finished
 
         public void completed(Integer result, ByteBuffer buffer) {
-        	try {
-                if (result==-1) {
-                	sinkPort.close();
-                    AsyncSocketChannel.this.close();
-                } else {
-                    buffer.flip();
-                    sinkPort.post(buffer);
-                    // start next reading only after this reading is fully handled
-                    channelAcc.up();
-                }
-            } catch (Throwable e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            if (result==-1) {
+                sinkPort.close();
+                AsyncSocketChannel.this.close();
+            } else {
+                buffer.flip();
+                sinkPort.post(buffer);
+                // start next reading only after this reading is posted,
+                // to keep buffer ordering
+                channelAcc.up();
             }
         }
 
@@ -260,27 +251,29 @@ public class AsyncSocketChannel {
         protected void complete() {
             AsyncSocketChannel.this.close();
         }
+
+        @Override
+        public void stop() {
+            AsyncSocketChannel.this.close();
+        }
         
         // ------------- writing finished
 
+        @Override
         public void completed(Integer result, ByteBuffer buffer) {
-        	try {
-                if (result==-1) {
-                    free(buffer);
-                    AsyncSocketChannel.this.close();
-                } else if (buffer.hasRemaining()) {
-                	// write one more time
-                    act(buffer);
-                } else {
-                    free(buffer);
-                    channelAcc.up();
-                }
-            } catch (Throwable e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            if (result==-1) {
+                free(buffer);
+                AsyncSocketChannel.this.close();
+            } else if (buffer.hasRemaining()) {
+                // write remaining bytes
+                act(buffer);
+            } else {
+                free(buffer);
+                channelAcc.up();
             }
         }
 
+        @Override
         public void failed(Throwable exc, ByteBuffer attach) {
             if (exc instanceof AsynchronousCloseException) {
                 AsyncSocketChannel.this.close();
