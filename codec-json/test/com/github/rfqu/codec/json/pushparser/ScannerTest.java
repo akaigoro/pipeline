@@ -81,7 +81,7 @@ public class ScannerTest {
         ArrayList<Character> types=new ArrayList<Character>(); 
 
         @Override
-        public void postToken(char tokenType, CharSequence tokenString) {
+        public void postToken(char tokenType, String tokenString) {
             if (tokenType==NEWL) return;
             types.add(tokenType);
             if (tokenString==null) {
