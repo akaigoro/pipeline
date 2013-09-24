@@ -1,4 +1,4 @@
-package com.github.rfqu.pipeline.nio.test;
+package com.github.rfqu.pipeline.net.test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,10 +16,10 @@ import org.junit.Test;
 import com.github.rfqu.df4j.core.DFContext;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.SinkNode;
-import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
-import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncServerSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncSocketChannel;
 
-public  class EchoTest {
+public  class ConnectionTest {
     static final int BUF_SIZE = 128;
     static final SocketAddress local9990 = new InetSocketAddress("localhost", 9990);
 
@@ -29,6 +29,7 @@ public  class EchoTest {
     }
 
     AsyncServerSocketChannel assc; 
+    ClientConnection serverConn;
     ClientConnection clientConn;
         
     @Before
@@ -37,15 +38,18 @@ public  class EchoTest {
         Pipeline acceptor=new Pipeline();
         acceptor.setSource(assc).setSink(new Reactor()).start();
         
-        AsyncSocketChannel client=new AsyncSocketChannel(local9990);
-        clientConn=new ClientConnection(client);
-        clientConn.start();
+    	AsyncSocketChannel client=new AsyncSocketChannel(local9990);
+    	clientConn=new ClientConnection(client);
+    	clientConn.start();
+    	
+    	serverConn=(ClientConnection) acceptor.get();//(1000);
     }
 
     @After
     public void close() {
-        clientConn.close();
-        assc.close();
+    	clientConn.close();
+    	serverConn.close();
+    	assc.close();
     }
     
     /**
@@ -53,16 +57,46 @@ public  class EchoTest {
      */
     @Test
     public void smokeIOTest() throws Exception {
-        try {
+    	try {
             String message="hi there";
             clientConn.write(message);
             clientConn.write("\n");
-            String reply=clientConn.read();
+            String reply=serverConn.read();
             assertEquals(message, reply);
         } catch (Throwable e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * send a message from server to client, then close connection
+     */
+//    @Test
+    public void smokeIOTest1() throws Exception {
+    	String message="hi there";
+    	serverConn.write(message);
+    	serverConn.close();
+		String reply=clientConn.read();
+    	assertEquals(message, reply);
+    }
+    
+    /**
+     * send 2 messages in both directions simultaneousely 
+     */
+//    @Test
+    public void smokeIOTest2() throws Exception {
+    	String message="hi there";
+    	clientConn.write(message);
+    	serverConn.write(message);
+    	clientConn.write("\n");
+    	serverConn.write("\n");
+		String reply1=serverConn.read();
+		String reply2=clientConn.read();
+    	clientConn.close();
+    	serverConn.close();
+    	assertEquals(message, reply1);
+    	assertEquals(message, reply2);
     }
     
     /**
@@ -74,18 +108,21 @@ public  class EchoTest {
         
         @Override
         protected void act(AsyncSocketChannel channel) {
-            channel.reader.injectBuffers(2, BUF_SIZE);
-            Pipeline echoPipe=new Pipeline()
-            .setSource(channel.reader)
-            .setSink(channel.writer)
-            .start();
+            ClientConnection connection;
+            try {
+                connection = new ClientConnection(channel);
+            } catch (IOException e) {
+                throw new RuntimeException();
+            }
+            connection.start();
+            context.post(connection);
         }
         
     }
     
     public static void main(String[] args) {
-        EchoTest ct = new EchoTest();
-        EchoTest.initClass();
+        ConnectionTest ct = new ConnectionTest();
+        ConnectionTest.initClass();
         try {
             ct.init();
             ct.smokeIOTest();

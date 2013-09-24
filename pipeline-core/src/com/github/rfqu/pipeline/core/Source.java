@@ -9,6 +9,4 @@ public interface Source<O>  extends Bolt {
 
     public Port<O> getReturnPort();
 
-	public void close();
-
 }

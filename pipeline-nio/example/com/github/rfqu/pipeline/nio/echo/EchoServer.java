@@ -8,8 +8,8 @@ import java.net.SocketAddress;
 import com.github.rfqu.df4j.core.ListenableFuture;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.SinkNode;
-import com.github.rfqu.pipeline.nio.AsyncServerSocketChannel;
-import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncServerSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncSocketChannel;
 
 /**
 * To run tests, {@see EchoServerLockTest} and {@see EchoServerGlobTest}.

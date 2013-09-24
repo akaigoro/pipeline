@@ -1,10 +1,10 @@
-package com.github.rfqu.pipeline.nio.test;
+package com.github.rfqu.pipeline.net.test;
 
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.github.rfqu.pipeline.core.Pipeline;
-import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncSocketChannel;
 import com.github.rfqu.pipeline.util.ByteBuf2String;
 import com.github.rfqu.pipeline.util.String2ByteBuf;
 import com.github.rfqu.pipeline.util.StringSink;

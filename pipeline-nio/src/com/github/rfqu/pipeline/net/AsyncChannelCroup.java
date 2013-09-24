@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package com.github.rfqu.pipeline.nio;
+package com.github.rfqu.pipeline.net;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;

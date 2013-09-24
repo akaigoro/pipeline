@@ -14,7 +14,7 @@ import com.github.rfqu.df4j.testutil.DoubleValue;
 import com.github.rfqu.pipeline.core.BoltBase;
 import com.github.rfqu.pipeline.core.Pipeline;
 import com.github.rfqu.pipeline.core.Transformer;
-import com.github.rfqu.pipeline.nio.AsyncSocketChannel;
+import com.github.rfqu.pipeline.net.AsyncSocketChannel;
 
 /**
  * Implements a client of Echo-server.
