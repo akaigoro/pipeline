@@ -1,14 +1,19 @@
-pipeline-nio: asyncronous network I/O, based on NIO2, provides two basic classes:
+pipeline-nio:
 ------------
-AsyncSocketChannel represents a network connection and contains 2 classes:
+asyncronous network I/O, based on NIO2. Provides two basic classes:
+
+AsyncSocketChannel
 ------------------
+represents a network connection and contains 2 classes:
 Source<ByteBuffer> reader - to be used as the first node in a network-connected pipeline 
 Sink<ByteBuffer> writer - to be used as the last node in a network-connected pipeline 
 
 It can be used both on client and server sides.
 
-AsyncServerSocketChannel - implements Source<AsyncSocketChannel>.
+AsyncServerSocketChannel
 -----------------------
+ - implements Source<AsyncSocketChannel>.
+ 
 Generates accepted connections to clients on server side.
 
 To obtain AsyncSocketChannel on a client side, simply instantiate it with a constructor,

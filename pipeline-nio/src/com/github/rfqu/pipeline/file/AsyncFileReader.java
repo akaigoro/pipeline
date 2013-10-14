@@ -6,7 +6,7 @@ import java.nio.channels.CompletionHandler;
 
 import com.github.rfqu.df4j.core.Port;
 import com.github.rfqu.pipeline.core.SourceNode;
-
+// TODO length of reading
 public  class AsyncFileReader extends SourceNode<ByteBuffer>
    implements CompletionHandler<Integer, ByteBuffer>
 {
@@ -14,6 +14,7 @@ public  class AsyncFileReader extends SourceNode<ByteBuffer>
     protected StreamInput<ByteBuffer> myOutput=new StreamInput<ByteBuffer>();
     /** guards position variable */
     protected Semafor deltas=new Semafor();
+    /** where to start reading from */
     long position=0;
     protected volatile AsynchronousFileChannel channel;
     

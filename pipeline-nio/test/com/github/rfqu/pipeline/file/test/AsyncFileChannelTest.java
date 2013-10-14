@@ -23,7 +23,7 @@ import com.github.rfqu.pipeline.file.AsyncFileReader;
 import com.github.rfqu.pipeline.file.AsyncFileWriter;
 
 public class AsyncFileChannelTest {
-    static final int BUF_SIZE = 32;
+    static final int BUF_SIZE = 256;
 
     Path dataDir;
 
@@ -43,21 +43,22 @@ public class AsyncFileChannelTest {
      */
     @Test
     public void smokeIOTest() throws Exception {
+        long bytes2write = 100000;
         Path file2write = dataDir.resolve("data1.dat");
         Set<StandardOpenOption> options = new HashSet();
         options.add(StandardOpenOption.CREATE);
         options.add(StandardOpenOption.READ);
         options.add(StandardOpenOption.WRITE);
         options.add(StandardOpenOption.DELETE_ON_CLOSE);
-        
         AsynchronousFileChannel asfc = AsynchronousFileChannel.open(file2write, options, currentExecutorService);
+        
         Pipeline writingPipeline = new Pipeline();
         AsyncFileWriter writer = new AsyncFileWriter(asfc);
-        long bytes2write = 1;
         writingPipeline.setSource(new DataSource(bytes2write)).setSink(writer);
         writingPipeline.start();
         long bytes=(Long)writingPipeline.get();
         assertEquals(bytes2write, bytes);
+        
         Pipeline readingPipeLine = new Pipeline();
         AsyncFileReader reader = new AsyncFileReader(asfc);
         reader.injectBuffers(2, BUF_SIZE);
