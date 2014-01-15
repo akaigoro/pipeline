@@ -71,10 +71,6 @@ public class Pipeline extends CompletableFuture<Object> {
         }
     }
 
-    public void close() {
-    	getSource().close();
-    }
-
     public <O> Connector<O> setSource(Source<O> newSource) {
         if (source==null) {
             source=newSource; // only first source set

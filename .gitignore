@@ -1,10 +1,10 @@
 # eclipse files
 .settings
 .settings/*
-*/.classpath
-*/.project
-.classpath
-.project
+#*/.classpath
+#*/.project
+#.classpath
+#.project
 bin
 
 # test results
