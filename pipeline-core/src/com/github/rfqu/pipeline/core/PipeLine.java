@@ -136,5 +136,10 @@ public class Pipeline extends CompletableFuture<Object> {
         }
         return sb.toString();
     }
+
+    public void close() {
+        // TODO Auto-generated method stub
+        
+    }
 }
 // TODO reaction to multiple postFailures and postFailure after post(value)
